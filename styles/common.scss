@@ -1,0 +1,21 @@
+@import 'normalize.css';
+
+body {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+a {
+  color: rgb(148 255 219);
+}
+
+.input-group {
+  display: flex;
+
+  margin: 1rem 0;
+
+  flex-direction: row;
+  gap: 1rem;
+
+  align-items: center;
+}
