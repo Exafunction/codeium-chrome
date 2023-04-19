@@ -36,4 +36,6 @@ Contributions are welcome! Feel free to submit pull requests and issues related 
 
 ## 🚀 Getting started
 
-You will need Node and npm. After `npm install`, use `npm run start` to develop, and `npm run build` to package.
+To use the extension, install it from the [Chrome Web Store.](https://chrome.google.com/webstore/detail/codeium/hobjkcpmjhlegmobgonaagepfckjkceh)
+
+If you'd like to develop the extension, you'll need Node and npm. After `npm install`, use `npm run start` to develop, and `npm run build` to package.
