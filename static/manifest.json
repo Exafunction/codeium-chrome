@@ -1,0 +1,47 @@
+{
+  "name": "Codeium",
+  "description": "Your modern coding superpower. Get code completions in Colab and more.",
+  "version": "1.2.4",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "serviceWorker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["codeium.css"],
+      "js": ["contentScript.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["script.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": ["storage"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "Codeium",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "/icons/16/codeium_square_logo.png",
+      "32": "/icons/32/codeium_square_logo.png",
+      "48": "/icons/48/codeium_square_logo.png",
+      "128": "/icons/128/codeium_square_logo.png"
+    }
+  },
+  "icons": {
+    "16": "/icons/16/codeium_square_logo.png",
+    "32": "/icons/32/codeium_square_logo.png",
+    "48": "/icons/48/codeium_square_logo.png",
+    "128": "/icons/128/codeium_square_logo.png"
+  },
+  "externally_connectable": {
+    "matches": ["<all_urls>"]
+  }
+}
