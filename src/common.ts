@@ -144,10 +144,17 @@ export class LanguageServerClient {
   private promiseMap = new Map<number, (res: GetCompletionsResponse | undefined) => void>();
   apiKeyPoller: ApiKeyPoller;
 
-  constructor(extensionId: string) {
-    this.port = chrome.runtime.connect(extensionId, { name: this.sessionId });
+  constructor(readonly extensionId: string) {
+    this.port = this.createPort();
     this.apiKeyPoller = new ApiKeyPoller(extensionId);
-    this.port.onMessage.addListener(async (message: LanguageServerWorkerResponse) => {
+  }
+
+  createPort(): chrome.runtime.Port {
+    const port = chrome.runtime.connect(this.extensionId, { name: this.sessionId });
+    port.onDisconnect.addListener(() => {
+      this.port = this.createPort();
+    });
+    port.onMessage.addListener(async (message: LanguageServerWorkerResponse) => {
       if (message.kind === 'getCompletions') {
         let res: GetCompletionsResponse | undefined = undefined;
         if (message.response !== undefined) {
@@ -157,6 +164,7 @@ export class LanguageServerClient {
         this.promiseMap.delete(message.requestId);
       }
     });
+    return port;
   }
 
   getMetadata(ideInfo: IdeInfo, apiKey: string): Metadata {
