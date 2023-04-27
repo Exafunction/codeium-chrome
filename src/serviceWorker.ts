@@ -15,10 +15,26 @@ import {
 
 const authStates: string[] = [];
 
+const initWhiteListRegs = [
+  /https:\/\/colab.research\.google\.com\/.*/,
+  /https:\/\/(.*\.)?stackblitz\.com\/.*/,
+  /https:\/\/(.*\.)?deepnote\.com\/.*/,
+  /https:\/\/(.*\.)?(databricks\.com|azuredatabricks\.net)\/.*/,
+  /https:\/\/(.*\.)?quadratichq\.com\/.*/,
+  /https?:\/\/(.*\.)?jsfiddle\.net(\/.*)?/,
+  /https:\/\/(.*\.)?codepen\.io(\/.*)?/,
+  /https:\/\/(.*\.)?codeshare\.io(\/.*)?/,
+  /https:\/\/console\.paperspace\.com\/.*\/notebook\/.*/,
+  /https?:\/\/www\.codewars\.com(\/.*)?/,
+  /https:\/\/(.*\.)?github\.com(\/.*)?/,
+];
 chrome.runtime.onInstalled.addListener(async () => {
   // Here goes everything you want to execute after extension initialization
 
-  await initializeStorageWithDefaults({ settings: {} });
+  await initializeStorageWithDefaults({
+    settings: {},
+    whitelist: initWhiteListRegs.map((reg) => reg.source),
+  });
 
   console.log('Extension successfully installed!');
 
@@ -47,6 +63,11 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     if (user?.apiKey === undefined) {
       await loggedOut();
     }
+    return;
+  }
+  if (message.type === 'whitelist') {
+    const whitelist = await getStorageItem('whitelist');
+    sendResponse(whitelist);
     return;
   }
   if (message.type == 'error') {

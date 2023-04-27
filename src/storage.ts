@@ -8,6 +8,8 @@ export interface Storage {
   lastError?: {
     message?: string;
   };
+  // regexes of domains to watch
+  whitelist: string[];
 }
 
 export function getStorageData(): Promise<Storage> {

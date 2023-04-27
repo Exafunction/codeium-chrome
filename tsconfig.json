@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "react",
     "outDir": "./dist/",
     "noImplicitAny": true,
     "module": "es6",

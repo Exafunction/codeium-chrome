@@ -6,7 +6,7 @@ import { getStorageItem, setStorageItem } from './storage';
 document.getElementById('login')?.addEventListener('click', openAuthTab);
 
 document.getElementById('go-to-options')?.addEventListener('click', () => {
-  chrome.runtime.openOptionsPage();
+  chrome.tabs.create({ url: 'chrome://extensions/?options=' + chrome.runtime.id });
 });
 
 getStorageItem('user')
