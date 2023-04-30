@@ -128,6 +128,8 @@ const SUPPORTED_CODEMIRROR_SITES = [
   { pattern: /https:\/\/(.*\.)?codeshare\.io(\/.*)?/, multiplayer: true },
 ];
 
+let injectCodeMirror = false;
+
 const addCodeMirrorInject = () =>
   Object.defineProperty(window, 'CodeMirror', {
     get: function () {
@@ -144,7 +146,6 @@ const addCodeMirrorInject = () =>
         const jupyterState = jupyterInject(extensionId, this.Jupyter);
         addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
       } else {
-        let injectCodeMirror = false;
         let multiplayer = false;
         for (const pattern of SUPPORTED_CODEMIRROR_SITES) {
           if (pattern.pattern.test(window.location.href)) {
@@ -177,7 +178,13 @@ const codeMirrorState = new CodeMirrorState(extensionId, undefined, false);
 const hook = codeMirrorState.editorHook();
 
 const addCodeMirror5Inject = () => {
-  setInterval(() => {
+  if (injectCodeMirror) return;
+
+  const f = setInterval(() => {
+    if (injectCodeMirror) {
+      clearInterval(f);
+      return;
+    }
     let notebook = false;
     for (const pattern of SUPPORTED_CODEMIRROR_NONGLOBAL_SITES) {
       if (pattern.pattern.test(window.location.href)) {
