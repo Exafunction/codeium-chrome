@@ -3,7 +3,7 @@ import React, { createRef, useEffect, useRef, useState } from 'react';
 import { PROFILE_URL } from '../auth';
 import { getStorageItem, setStorageItem } from '../storage';
 import Box from '@mui/material/Box';
-import { TextField, Button, Link, Typography } from '@mui/material';
+import { TextField, Button, Link, Typography, Snackbar, Alert } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LoginIcon from '@mui/icons-material/Login';
@@ -14,6 +14,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const EditableList = () => {
   const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+  const [severity, setSeverity] = useState<'success' | 'error'>('success');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -43,15 +46,34 @@ const EditableList = () => {
         fullWidth
         value={text}
         multiline
-        rows={7}
+        rows={10}
+        sx={{
+          '& .MuiInputBase-root': {
+            fontSize: '0.8rem',
+            fontFamily: 'monospace',
+          },
+        }}
         onChange={(e) => setText(e.target.value)}
       ></TextField>
 
       <Button
         variant="text"
         onClick={() => {
-          setStorageItem('whitelist', text.split('\n'));
-          window.close();
+          const lst = text.split('\n').map((x) => x.trim());
+          for (const rule of lst) {
+            try {
+              new RegExp(rule);
+            } catch (e) {
+              setSeverity('error');
+              setMessage(`Invalid regex: ${rule}`);
+              setOpen(true);
+              return;
+            }
+          }
+          setStorageItem('whitelist', lst);
+          setSeverity('success');
+          setMessage('Saved successfully');
+          setOpen(true);
         }}
         sx={{
           float: 'right',
@@ -71,6 +93,17 @@ const EditableList = () => {
       >
         Exit <CloseIcon />
       </Button>
+
+      <Snackbar
+        open={open}
+        autoHideDuration={3000}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={severity} sx={{ width: '100%' }} onClose={() => setOpen(false)}>
+          {message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
