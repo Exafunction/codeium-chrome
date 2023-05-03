@@ -13,17 +13,17 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getWhiteList(extensionId: string): Promise<string[] | undefined> {
-  const whitelist = await new Promise<Storage['whitelist']>((resolve) => {
+async function getAllowList(extensionId: string): Promise<string[] | undefined> {
+  const allowList = await new Promise<Storage['allowList']>((resolve) => {
     chrome.runtime.sendMessage(
       extensionId,
-      { type: 'whitelist' },
-      (response: Storage['whitelist']) => {
+      { type: 'allowList' },
+      (response: Storage['allowList']) => {
         resolve(response);
       }
     );
   });
-  return whitelist;
+  return allowList;
 }
 
 // Clear any bad state from another tab.
@@ -130,7 +130,7 @@ const SUPPORTED_CODEMIRROR_SITES = [
 
 let injectCodeMirror = false;
 
-const addCodeMirrorInject = () =>
+const addCodeMirror5GlobalInject = () =>
   Object.defineProperty(window, 'CodeMirror', {
     get: function () {
       return this._codeium_CodeMirror;
@@ -177,7 +177,7 @@ const SUPPORTED_CODEMIRROR_NONGLOBAL_SITES = [
 const codeMirrorState = new CodeMirrorState(extensionId, undefined, false);
 const hook = codeMirrorState.editorHook();
 
-const addCodeMirror5Inject = () => {
+const addCodeMirror5LocalInject = () => {
   if (injectCodeMirror) return;
 
   const f = setInterval(() => {
@@ -211,14 +211,14 @@ const addCodeMirror5Inject = () => {
   }, 100);
 };
 
-getWhiteList(extensionId).then((waitList) => {
-  for (const addr of waitList ?? []) {
+getAllowList(extensionId).then((allowList) => {
+  for (const addr of allowList ?? []) {
     const host = new RegExp(addr);
     if (host.test(window.location.href)) {
-      // the url matches the whitelist
+      // the url matches the allowList
       addMonacoInject();
-      addCodeMirrorInject();
-      addCodeMirror5Inject();
+      addCodeMirror5GlobalInject();
+      addCodeMirror5LocalInject();
       return;
     }
   }

@@ -9,7 +9,7 @@ export interface Storage {
     message?: string;
   };
   // regexes of domains to watch
-  whitelist: string[];
+  allowList: string[];
 }
 
 export function getStorageData(): Promise<Storage> {

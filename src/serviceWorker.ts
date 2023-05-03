@@ -15,7 +15,7 @@ import {
 
 const authStates: string[] = [];
 
-const initWhiteListRegs = [
+const initAllowListRegs = [
   /https:\/\/colab.research\.google\.com\/.*/,
   /https:\/\/(.*\.)?stackblitz\.com\/.*/,
   /https:\/\/(.*\.)?deepnote\.com\/.*/,
@@ -33,7 +33,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
   await initializeStorageWithDefaults({
     settings: {},
-    whitelist: initWhiteListRegs.map((reg) => reg.source),
+    allowList: initAllowListRegs.map((reg) => reg.source),
   });
 
   console.log('Extension successfully installed!');
@@ -65,9 +65,9 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     }
     return;
   }
-  if (message.type === 'whitelist') {
-    const whitelist = await getStorageItem('whitelist');
-    sendResponse(whitelist);
+  if (message.type === 'allowList') {
+    const allowList = await getStorageItem('allowList');
+    sendResponse(allowList);
     return;
   }
   if (message.type == 'error') {

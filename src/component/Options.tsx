@@ -10,6 +10,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import CloseIcon from '@mui/icons-material/Close';
 import ChecklistRtlIcon from '@mui/icons-material/ChecklistRtl';
+import Divider from '@mui/material/Divider';
 import { v4 as uuidv4 } from 'uuid';
 
 const EditableList = () => {
@@ -20,28 +21,19 @@ const EditableList = () => {
 
   useEffect(() => {
     (async () => {
-      const whitelist = await getStorageItem('whitelist');
-      setText(whitelist.join('\n'));
+      const allowList = (await getStorageItem('allowList')) ?? [];
+      setText(allowList.join('\n'));
     })();
   }, []);
 
   return (
     <>
-      <Typography variant="h6">
-        Whitelist{' '}
-        <ChecklistRtlIcon
-          sx={{
-            verticalAlign: 'bottom',
-          }}
-          fontSize="large"
-        />
-      </Typography>
+      <Typography variant="h6">Allow List</Typography>
       <Typography variant="body2">
-        Domains to allow auto-completion, double-click to edit, use regex format
+        Domains to allow auto-completion. Use one regex per line.
       </Typography>
 
       <TextField
-        label="Domain Regexes"
         variant="standard"
         fullWidth
         value={text}
@@ -59,7 +51,10 @@ const EditableList = () => {
       <Button
         variant="text"
         onClick={() => {
-          const lst = text.split('\n').map((x) => x.trim());
+          const lst = text
+            .split('\n')
+            .map((x) => x.trim())
+            .filter((x) => x !== '');
           for (const rule of lst) {
             try {
               new RegExp(rule);
@@ -70,7 +65,7 @@ const EditableList = () => {
               return;
             }
           }
-          setStorageItem('whitelist', lst);
+          setStorageItem('allowList', lst);
           setSeverity('success');
           setMessage('Saved successfully');
           setOpen(true);
@@ -80,7 +75,8 @@ const EditableList = () => {
           textTransform: 'none',
         }}
       >
-        Save <SaveAltIcon />
+        Save the Allow List
+        <SaveAltIcon />
       </Button>
 
       <Button
@@ -145,8 +141,13 @@ const Options = () => {
           />
         </Link>
       </Typography>
+      <Divider
+        sx={{
+          padding: '0.5em',
+        }}
+      />
       <Box sx={{ my: 2, mx: 2 }}>
-        <Typography variant="h6"> Alternative ways to log in </Typography>
+        <Typography variant="h6"> Alternative Ways to Log in </Typography>
         <TextField
           id="token"
           label="Token"
@@ -173,6 +174,11 @@ const Options = () => {
           </Button>
         </Box>
       </Box>
+      <Divider
+        sx={{
+          padding: '0.5em',
+        }}
+      />
       <Box sx={{ my: 2, mx: 2 }}>
         <EditableList />
       </Box>
