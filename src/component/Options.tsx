@@ -1,4 +1,4 @@
-import React, { createRef, useEffect, useRef, useState } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 
 import { PROFILE_URL } from '../auth';
 import { getStorageItem, setStorageItem } from '../storage';
@@ -9,7 +9,6 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LoginIcon from '@mui/icons-material/Login';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import CloseIcon from '@mui/icons-material/Close';
-import ChecklistRtlIcon from '@mui/icons-material/ChecklistRtl';
 import Divider from '@mui/material/Divider';
 import { v4 as uuidv4 } from 'uuid';
 
