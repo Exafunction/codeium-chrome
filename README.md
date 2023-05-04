@@ -17,7 +17,7 @@
 
 _Free, ultrafast code autocomplete for Chrome_
 
-Codeium autocompletes your code with AI in all major IDEs. This includes web editors as well! This Chrome extension currently supports:
+[Codeium](https://codeium.com/) autocompletes your code with AI in all major IDEs. This includes web editors as well! This Chrome extension currently supports:
 
 - [CodePen](https://codepen.io/)
 - [Codeshare](https://codeshare.io/)
@@ -33,6 +33,8 @@ Codeium autocompletes your code with AI in all major IDEs. This includes web edi
 - [StackBlitz](https://stackblitz.com/)
 
 Contributions are welcome! Feel free to submit pull requests and issues related to the extension.
+
+🔗 [Original Chrome extension launch announcement](https://codeium.com/blog/codeium-chrome-extension-launch)
 
 ## 🚀 Getting started
 

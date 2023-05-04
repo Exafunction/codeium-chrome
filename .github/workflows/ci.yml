@@ -18,5 +18,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files
       - run: npm install
       - run: npm run build
