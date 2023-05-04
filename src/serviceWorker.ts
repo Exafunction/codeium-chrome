@@ -7,7 +7,12 @@ import {
   LanguageServerWorkerRequest,
 } from './common';
 import { loggedIn, loggedOut, unhealthy } from './shared';
-import { getStorageItem, initializeStorageWithDefaults, setStorageItem } from './storage';
+import {
+  defaultAllowList,
+  getStorageItem,
+  initializeStorageWithDefaults,
+  setStorageItem,
+} from './storage';
 import {
   AcceptCompletionRequest,
   GetCompletionsRequest,
@@ -15,25 +20,12 @@ import {
 
 const authStates: string[] = [];
 
-const initAllowListRegs = [
-  /https:\/\/colab.research\.google\.com\/.*/,
-  /https:\/\/(.*\.)?stackblitz\.com\/.*/,
-  /https:\/\/(.*\.)?deepnote\.com\/.*/,
-  /https:\/\/(.*\.)?(databricks\.com|azuredatabricks\.net)\/.*/,
-  /https:\/\/(.*\.)?quadratichq\.com\/.*/,
-  /https?:\/\/(.*\.)?jsfiddle\.net(\/.*)?/,
-  /https:\/\/(.*\.)?codepen\.io(\/.*)?/,
-  /https:\/\/(.*\.)?codeshare\.io(\/.*)?/,
-  /https:\/\/console\.paperspace\.com\/.*\/notebook\/.*/,
-  /https?:\/\/www\.codewars\.com(\/.*)?/,
-  /https:\/\/(.*\.)?github\.com(\/.*)?/,
-];
 chrome.runtime.onInstalled.addListener(async () => {
   // Here goes everything you want to execute after extension initialization
 
   await initializeStorageWithDefaults({
     settings: {},
-    allowList: initAllowListRegs.map((reg) => reg.source),
+    allowList: defaultAllowList,
   });
 
   console.log('Extension successfully installed!');

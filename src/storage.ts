@@ -68,3 +68,18 @@ export async function initializeStorageWithDefaults(defaults: Storage) {
   const newStorageData = Object.assign({}, defaults, currentStorageData);
   await setStorageData(newStorageData);
 }
+
+// default allowlist
+export const defaultAllowList = [
+  /https:\/\/colab.research\.google\.com\/.*/,
+  /https:\/\/(.*\.)?stackblitz\.com\/.*/,
+  /https:\/\/(.*\.)?deepnote\.com\/.*/,
+  /https:\/\/(.*\.)?(databricks\.com|azuredatabricks\.net)\/.*/,
+  /https:\/\/(.*\.)?quadratichq\.com\/.*/,
+  /https?:\/\/(.*\.)?jsfiddle\.net(\/.*)?/,
+  /https:\/\/(.*\.)?codepen\.io(\/.*)?/,
+  /https:\/\/(.*\.)?codeshare\.io(\/.*)?/,
+  /https:\/\/console\.paperspace\.com\/.*\/notebook\/.*/,
+  /https?:\/\/www\.codewars\.com(\/.*)?/,
+  /https:\/\/(.*\.)?github\.com(\/.*)?/,
+].map((reg) => reg.source);

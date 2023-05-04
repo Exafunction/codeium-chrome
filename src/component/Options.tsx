@@ -1,14 +1,14 @@
 import React, { createRef, useEffect, useState } from 'react';
 
 import { PROFILE_URL } from '../auth';
-import { getStorageItem, setStorageItem } from '../storage';
+import { getStorageItem, setStorageItem, defaultAllowList } from '../storage';
 import Box from '@mui/material/Box';
 import { TextField, Button, Link, Typography, Snackbar, Alert } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LoginIcon from '@mui/icons-material/Login';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import CloseIcon from '@mui/icons-material/Close';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import Divider from '@mui/material/Divider';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,7 +27,7 @@ const EditableList = () => {
 
   return (
     <>
-      <Typography variant="h6">Allow List</Typography>
+      <Typography variant="h6">Allowlist</Typography>
       <Typography variant="body2">
         Domains to allow auto-completion. Use one regex per line.
       </Typography>
@@ -74,7 +74,7 @@ const EditableList = () => {
           textTransform: 'none',
         }}
       >
-        Save the Allow List
+        Save Allowlist
         <SaveAltIcon />
       </Button>
 
@@ -84,9 +84,21 @@ const EditableList = () => {
           float: 'right',
           textTransform: 'none',
         }}
-        onClick={window.close}
+        onClick={async () => {
+          try {
+            await setStorageItem('allowList', defaultAllowList);
+            setText(defaultAllowList.join('\n'));
+            setSeverity('success');
+            setMessage('Reset successfully');
+            setOpen(true);
+          } catch (e) {
+            setSeverity('error');
+            setMessage((e as Error).message);
+            setOpen(true);
+          }
+        }}
       >
-        Exit <CloseIcon />
+        Reset Allowlist <RestartAltIcon />
       </Button>
 
       <Snackbar
