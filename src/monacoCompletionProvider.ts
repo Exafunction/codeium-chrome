@@ -62,12 +62,13 @@ declare module 'monaco-editor' {
 }
 
 export const OMonacoSite = {
-  CUSTOM: 0,
+  UNSPECIFIED: 0,
   COLAB: 1,
   STACKBLITZ: 2,
   DEEPNOTE: 3,
   DATABRICKS: 4,
   QUADRATIC: 5,
+  CUSTOM: 6,
 } as const;
 export type MonacoSite = (typeof OMonacoSite)[keyof typeof OMonacoSite];
 
