@@ -62,7 +62,7 @@ declare module 'monaco-editor' {
 }
 
 export const OMonacoSite = {
-  UNSPECIFIED: 0,
+  CUSTOM: 0,
   COLAB: 1,
   STACKBLITZ: 2,
   DEEPNOTE: 3,

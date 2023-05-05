@@ -67,7 +67,7 @@ const addMonacoInject = () =>
         return this._codeium_monaco;
       },
       set(_monaco: Monaco) {
-        let injectMonaco: MonacoSite = OMonacoSite.COLAB;
+        let injectMonaco: MonacoSite = OMonacoSite.CUSTOM;
         for (const [sitePattern, site] of SUPPORTED_MONACO_SITES) {
           if (sitePattern.test(window.location.href)) {
             injectMonaco = site;
