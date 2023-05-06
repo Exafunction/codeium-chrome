@@ -11,7 +11,7 @@ module.exports = {
     serviceWorker: './src/serviceWorker.ts',
     contentScript: './src/contentScript.ts',
     popup: './src/popup.ts',
-    options: './src/options.ts',
+    options: './src/options.tsx',
     // This script is loaded in contentScript.ts.
     script: './src/script.ts',
   },
@@ -19,7 +19,16 @@ module.exports = {
     rules: [
       {
         test: /\.(js|ts)x?$/,
-        use: ['babel-loader'],
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              '@babel/preset-react',
+              '@babel/preset-env',
+              '@babel/preset-typescript',
+            ],
+          }
+        },
         exclude: /node_modules/,
       },
       {
@@ -33,7 +42,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.ts'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   output: {
     filename: '[name].js',
@@ -54,4 +63,7 @@ module.exports = {
       patterns: [{ from: 'static' }],
     }),
   ],
+  experiments: {
+    topLevelAwait: true,
+  }
 };

@@ -68,6 +68,7 @@ export const OMonacoSite = {
   DEEPNOTE: 3,
   DATABRICKS: 4,
   QUADRATIC: 5,
+  CUSTOM: 6,
 } as const;
 export type MonacoSite = (typeof OMonacoSite)[keyof typeof OMonacoSite];
 

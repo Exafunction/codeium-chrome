@@ -7,7 +7,12 @@ import {
   LanguageServerWorkerRequest,
 } from './common';
 import { loggedIn, loggedOut, unhealthy } from './shared';
-import { getStorageItem, initializeStorageWithDefaults, setStorageItem } from './storage';
+import {
+  defaultAllowList,
+  getStorageItem,
+  initializeStorageWithDefaults,
+  setStorageItem,
+} from './storage';
 import {
   AcceptCompletionRequest,
   GetCompletionsRequest,
@@ -18,7 +23,10 @@ const authStates: string[] = [];
 chrome.runtime.onInstalled.addListener(async () => {
   // Here goes everything you want to execute after extension initialization
 
-  await initializeStorageWithDefaults({ settings: {} });
+  await initializeStorageWithDefaults({
+    settings: {},
+    allowList: defaultAllowList,
+  });
 
   console.log('Extension successfully installed!');
 
@@ -47,6 +55,11 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     if (user?.apiKey === undefined) {
       await loggedOut();
     }
+    return;
+  }
+  if (message.type === 'allowList') {
+    const allowList = await getStorageItem('allowList');
+    sendResponse(allowList);
     return;
   }
   if (message.type == 'error') {

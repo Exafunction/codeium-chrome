@@ -23,7 +23,8 @@
   "permissions": ["storage"],
   "options_ui": {
     "page": "options.html",
-    "open_in_tab": true
+    "open_in_tab": false,
+    "browser_style": true
   },
   "action": {
     "default_title": "Codeium",
