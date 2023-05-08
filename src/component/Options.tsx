@@ -1,16 +1,16 @@
+import LoginIcon from '@mui/icons-material/Login';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Alert, Button, Link, Snackbar, TextField, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import React, { createRef, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { PROFILE_URL } from '../auth';
-import { getStorageItem, setStorageItem, defaultAllowList } from '../storage';
-import Box from '@mui/material/Box';
-import { TextField, Button, Link, Typography, Snackbar, Alert } from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import LoginIcon from '@mui/icons-material/Login';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import Divider from '@mui/material/Divider';
-import { v4 as uuidv4 } from 'uuid';
+import { computeAllowlist, defaultAllowlist, getStorageItem, setStorageItem } from '../storage';
 
 const EditableList = () => {
   const [text, setText] = useState('');
@@ -20,8 +20,8 @@ const EditableList = () => {
 
   useEffect(() => {
     (async () => {
-      const allowList = (await getStorageItem('allowList')) ?? [];
-      setText(allowList.join('\n'));
+      const allowlist = computeAllowlist(await getStorageItem('allowlist'));
+      setText(allowlist.join('\n'));
     })();
   }, []);
 
@@ -64,7 +64,7 @@ const EditableList = () => {
               return;
             }
           }
-          setStorageItem('allowList', lst);
+          setStorageItem('allowlist', { defaults: defaultAllowlist, current: lst });
           setSeverity('success');
           setMessage('Saved successfully');
           setOpen(true);
@@ -86,8 +86,11 @@ const EditableList = () => {
         }}
         onClick={async () => {
           try {
-            await setStorageItem('allowList', defaultAllowList);
-            setText(defaultAllowList.join('\n'));
+            await setStorageItem('allowlist', {
+              defaults: defaultAllowlist,
+              current: defaultAllowlist,
+            });
+            setText(defaultAllowlist.join('\n'));
             setSeverity('success');
             setMessage('Reset successfully');
             setOpen(true);

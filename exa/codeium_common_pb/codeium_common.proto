@@ -54,6 +54,12 @@ message Metadata {
   }];
 }
 
+// Next ID: 3, Previous field: insert_spaces.
+message EditorOptions {
+  uint64 tab_size = 1 [(validate.rules).uint64.gt = 0];
+  bool insert_spaces = 2;
+}
+
 message Event {
   EventType event_type = 1;
   string event_json = 2;

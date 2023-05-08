@@ -19,7 +19,7 @@ service LanguageServerService {
 message GetCompletionsRequest {
   codeium_common_pb.Metadata metadata = 1 [(validate.rules).message.required = true];
   Document document = 2 [(validate.rules).message.required = true];
-  EditorOptions editor_options = 3 [(validate.rules).message.required = true];
+  codeium_common_pb.EditorOptions editor_options = 3 [(validate.rules).message.required = true];
   repeated Document other_documents = 5;
 }
 
@@ -80,12 +80,6 @@ message Document {
       "\r\n"
     ]
   }];
-}
-
-// Next ID: 3, Previous field: insert_spaces.
-message EditorOptions {
-  uint64 tab_size = 1 [(validate.rules).uint64.gt = 0];
-  bool insert_spaces = 2;
 }
 
 enum CodeiumState {
