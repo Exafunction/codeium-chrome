@@ -5,10 +5,10 @@ import { editorLanguage, language } from './codemirrorLanguages';
 import { CODEIUM_DEBUG, IdeInfo, LanguageServerClient } from './common';
 import { TextAndOffsets, computeTextAndOffsets } from './notebook';
 import { numUtf8BytesToNumCodeUnits } from './utf';
+import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import {
   CompletionItem,
   CompletionPartType,
-  EditorOptions,
   GetCompletionsRequest,
 } from '../proto/exa/language_server_pb/language_server_pb';
 

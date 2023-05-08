@@ -1,12 +1,12 @@
 {
   "name": "chrome-extension-webpack",
-  "version": "1.2.11",
+  "version": "1.2.15",
   "description": "Get started with Chrome extensions development using webpack, Typescript, Sass, and more",
   "scripts": {
     "generate": "rm -rf ./proto && node generate.js",
     "start": "npm run generate && webpack --watch --config webpack.dev.js",
     "build": "npm run lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
-    "lint": "npm run generate && tsc --noEmit && eslint --ext .ts --max-warnings=0 .",
+    "lint": "npm run generate && tsc --noEmit && eslint --ext .ts,.tsx --max-warnings=0 .",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "postinstall": "patch-package"
@@ -81,8 +81,5 @@
       "npm run prettier",
       "npm run lint"
     ]
-  },
-  "main": "generate.js",
-  "keywords": [],
-  "author": ""
+  }
 }

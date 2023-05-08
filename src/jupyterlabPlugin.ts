@@ -9,7 +9,7 @@ import { type Widget } from '@lumino/widgets';
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager, addListeners } from './codemirror';
-import { EditorOptions } from '../proto/exa/language_server_pb/language_server_pb';
+import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 
 const COMMAND_ACCEPT = 'codeium:accept-completion';
 const COMMAND_DISMISS = 'codeium:dismiss-completion';

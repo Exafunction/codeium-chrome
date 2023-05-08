@@ -6,6 +6,7 @@ import { CodeMirrorState } from './codemirrorInject';
 import { inject as jupyterInject } from './jupyterInject';
 import { getPlugin } from './jupyterlabPlugin';
 import { MonacoCompletionProvider, MonacoSite, OMonacoSite } from './monacoCompletionProvider';
+import { Storage, computeAllowlist } from './storage';
 
 declare type Monaco = typeof import('monaco-editor');
 declare type CodeMirror = typeof import('codemirror');
@@ -13,17 +14,17 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getAllowList(extensionId: string): Promise<string[] | undefined> {
-  const allowList = await new Promise<Storage['allowList']>((resolve) => {
+async function getAllowlist(extensionId: string): Promise<Storage['allowlist'] | undefined> {
+  const allowlist = await new Promise<Storage['allowlist']>((resolve) => {
     chrome.runtime.sendMessage(
       extensionId,
-      { type: 'allowList' },
-      (response: Storage['allowList']) => {
+      { type: 'allowlist' },
+      (response: Storage['allowlist']) => {
         resolve(response);
       }
     );
   });
-  return allowList;
+  return allowlist;
 }
 
 // Clear any bad state from another tab.
@@ -211,11 +212,11 @@ const addCodeMirror5LocalInject = () => {
   }, 100);
 };
 
-getAllowList(extensionId).then((allowList) => {
-  for (const addr of allowList ?? []) {
+getAllowlist(extensionId).then((allowlist) => {
+  for (const addr of computeAllowlist(allowlist)) {
     const host = new RegExp(addr);
     if (host.test(window.location.href)) {
-      // the url matches the allowList
+      // the url matches the allowlist
       addMonacoInject();
       addCodeMirror5GlobalInject();
       addCodeMirror5LocalInject();

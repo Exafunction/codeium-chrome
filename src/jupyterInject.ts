@@ -1,7 +1,7 @@
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager } from './codemirror';
-import { EditorOptions } from '../proto/exa/language_server_pb/language_server_pb';
+import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 
 declare class Cell {
   code_mirror: CodeMirror.Editor;

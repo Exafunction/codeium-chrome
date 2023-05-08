@@ -9,7 +9,40 @@ export interface Storage {
     message?: string;
   };
   // regexes of domains to watch
-  allowList: string[];
+  allowlist?: {
+    // Defaults at the time of saving the setting.
+    defaults: string[];
+    current: string[];
+  };
+}
+
+// In case the defaults change over time, reconcile the saved setting with the
+// new default allowlist.
+export function computeAllowlist(
+  allowlist:
+    | {
+        defaults: string[];
+        current: string[];
+      }
+    | undefined
+): string[] {
+  if (allowlist === undefined) {
+    allowlist = {
+      defaults: [],
+      current: [],
+    };
+  }
+  for (const newDefault of defaultAllowlist) {
+    if (!allowlist.defaults.includes(newDefault) && !allowlist.current.includes(newDefault)) {
+      allowlist.current.push(newDefault);
+    }
+  }
+  for (const oldDefault of allowlist.defaults) {
+    if (!defaultAllowlist.includes(oldDefault) && allowlist.current.includes(oldDefault)) {
+      allowlist.current.splice(allowlist.current.indexOf(oldDefault), 1);
+    }
+  }
+  return allowlist.current;
 }
 
 export function getStorageData(): Promise<Storage> {
@@ -70,7 +103,7 @@ export async function initializeStorageWithDefaults(defaults: Storage) {
 }
 
 // default allowlist
-export const defaultAllowList = [
+export const defaultAllowlist = [
   /https:\/\/colab.research\.google\.com\/.*/,
   /https:\/\/(.*\.)?stackblitz\.com\/.*/,
   /https:\/\/(.*\.)?deepnote\.com\/.*/,

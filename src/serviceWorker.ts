@@ -8,7 +8,7 @@ import {
 } from './common';
 import { loggedIn, loggedOut, unhealthy } from './shared';
 import {
-  defaultAllowList,
+  defaultAllowlist,
   getStorageItem,
   initializeStorageWithDefaults,
   setStorageItem,
@@ -25,7 +25,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
   await initializeStorageWithDefaults({
     settings: {},
-    allowList: defaultAllowList,
+    allowlist: { defaults: defaultAllowlist, current: defaultAllowlist },
   });
 
   console.log('Extension successfully installed!');
@@ -57,9 +57,9 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     }
     return;
   }
-  if (message.type === 'allowList') {
-    const allowList = await getStorageItem('allowList');
-    sendResponse(allowList);
+  if (message.type === 'allowlist') {
+    const allowlist = await getStorageItem('allowlist');
+    sendResponse(allowlist);
     return;
   }
   if (message.type == 'error') {
