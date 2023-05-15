@@ -241,6 +241,9 @@ export class CodeMirrorManager {
         part.text.split('\n').forEach((line) => {
           const preElement = document.createElement('pre');
           preElement.classList.add('CodeMirror-line', 'codeium-ghost-line');
+          if (line === '') {
+            line = ' ';
+          }
           preElement.innerText = line;
           lineElement.appendChild(preElement);
         });
