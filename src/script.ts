@@ -46,7 +46,6 @@ declare global {
 }
 
 // Intercept creation of monaco so we don't have to worry about timing the injection.
-
 const addMonacoInject = () =>
   Object.defineProperties(window, {
     MonacoEnvironment: {
@@ -97,11 +96,14 @@ const addMonacoInject = () =>
     },
   });
 
+let injectCodeMirror = false;
+
 const jupyterConfigDataElement = document.getElementById('jupyter-config-data');
 if (jupyterConfigDataElement !== null) {
   const config = JSON.parse(jupyterConfigDataElement.innerText);
   config.exposeAppInBrowser = true;
   jupyterConfigDataElement.innerText = JSON.stringify(config);
+  injectCodeMirror = true;
   Object.defineProperty(window, 'jupyterapp', {
     get: function () {
       return this._codeium_jupyterapp;
@@ -129,8 +131,6 @@ const SUPPORTED_CODEMIRROR_SITES = [
   { pattern: /https:\/\/(.*\.)?codeshare\.io(\/.*)?/, multiplayer: true },
 ];
 
-let injectCodeMirror = false;
-
 const addCodeMirror5GlobalInject = () =>
   Object.defineProperty(window, 'CodeMirror', {
     get: function () {
@@ -138,14 +138,19 @@ const addCodeMirror5GlobalInject = () =>
     },
     set: function (cm?: { version?: string }) {
       this._codeium_CodeMirror = cm;
+      if (injectCodeMirror) {
+        return;
+      }
       if (!cm?.version?.startsWith('5.')) {
         console.warn("Codeium doesn't support CodeMirror 6");
         return;
       }
       // We rely on the fact that the Jupyter variable is defined first.
       if (Object.prototype.hasOwnProperty.call(this, 'Jupyter')) {
+        injectCodeMirror = true;
         const jupyterState = jupyterInject(extensionId, this.Jupyter);
         addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
+        console.log('Activated Codeium');
       } else {
         let multiplayer = false;
         for (const pattern of SUPPORTED_CODEMIRROR_SITES) {
@@ -179,8 +184,6 @@ const codeMirrorState = new CodeMirrorState(extensionId, undefined, false);
 const hook = codeMirrorState.editorHook();
 
 const addCodeMirror5LocalInject = () => {
-  if (injectCodeMirror) return;
-
   const f = setInterval(() => {
     if (injectCodeMirror) {
       clearInterval(f);
@@ -209,7 +212,7 @@ const addCodeMirror5LocalInject = () => {
       const docs = [...docsByPosition.entries()].sort((a, b) => a[1] - b[1]).map(([doc]) => doc);
       codeMirrorState.docs = docs;
     }
-  }, 100);
+  }, 500);
 };
 
 getAllowlist(extensionId).then((allowlist) => {
