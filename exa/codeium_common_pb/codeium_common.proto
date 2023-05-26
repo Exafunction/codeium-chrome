@@ -24,6 +24,11 @@ message Completion {
   uint64 generated_length = 10;
 }
 
+// Authentication source for users on the cloud service.
+enum AuthSource {
+  AUTH_SOURCE_CODEIUM = 0;
+}
+
 // Next ID: 15, Previous field: url.
 message Metadata {
   string ide_name = 1 [(validate.rules).string.min_len = 1];
@@ -52,6 +57,15 @@ message Metadata {
     ignore_empty: true,
     uri: true
   }];
+
+  // Authentication source information.
+  AuthSource auth_source = 15;
+}
+
+// Next ID: 3, Previous field: insert_spaces.
+message EditorOptions {
+  uint64 tab_size = 1 [(validate.rules).uint64.gt = 0];
+  bool insert_spaces = 2;
 }
 
 message Event {

@@ -1,12 +1,12 @@
 {
   "name": "chrome-extension-webpack",
-  "version": "1.2.11",
+  "version": "1.2.18",
   "description": "Get started with Chrome extensions development using webpack, Typescript, Sass, and more",
   "scripts": {
     "generate": "rm -rf ./proto && node generate.js",
     "start": "npm run generate && webpack --watch --config webpack.dev.js",
     "build": "npm run lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
-    "lint": "npm run generate && tsc --noEmit && eslint --ext .ts --max-warnings=0 .",
+    "lint": "npm run generate && tsc --noEmit && eslint --ext .ts,.tsx --max-warnings=0 .",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "postinstall": "patch-package"
@@ -25,7 +25,7 @@
     "@jupyterlab/codemirror": "^3.5.2",
     "@jupyterlab/fileeditor": "^3.5.2",
     "@jupyterlab/notebook": "^3.5.2",
-    "@types/chrome": "^0.0.193",
+    "@types/chrome": "^0.0.235",
     "@types/codemirror": "^5.60.6",
     "@types/react-dom": "^18.2.1",
     "@types/uuid": "^9.0.1",
@@ -81,8 +81,5 @@
       "npm run prettier",
       "npm run lint"
     ]
-  },
-  "main": "generate.js",
-  "keywords": [],
-  "author": ""
+  }
 }

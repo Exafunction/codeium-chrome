@@ -6,6 +6,7 @@ import { CodeMirrorState } from './codemirrorInject';
 import { inject as jupyterInject } from './jupyterInject';
 import { getPlugin } from './jupyterlabPlugin';
 import { MonacoCompletionProvider, MonacoSite, OMonacoSite } from './monacoCompletionProvider';
+import { Storage, computeAllowlist } from './storage';
 
 declare type Monaco = typeof import('monaco-editor');
 declare type CodeMirror = typeof import('codemirror');
@@ -13,17 +14,17 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getAllowList(extensionId: string): Promise<string[] | undefined> {
-  const allowList = await new Promise<Storage['allowList']>((resolve) => {
+async function getAllowlist(extensionId: string): Promise<Storage['allowlist'] | undefined> {
+  const allowlist = await new Promise<Storage['allowlist']>((resolve) => {
     chrome.runtime.sendMessage(
       extensionId,
-      { type: 'allowList' },
-      (response: Storage['allowList']) => {
+      { type: 'allowlist' },
+      (response: Storage['allowlist']) => {
         resolve(response);
       }
     );
   });
-  return allowList;
+  return allowlist;
 }
 
 // Clear any bad state from another tab.
@@ -45,7 +46,6 @@ declare global {
 }
 
 // Intercept creation of monaco so we don't have to worry about timing the injection.
-
 const addMonacoInject = () =>
   Object.defineProperties(window, {
     MonacoEnvironment: {
@@ -96,11 +96,14 @@ const addMonacoInject = () =>
     },
   });
 
+let injectCodeMirror = false;
+
 const jupyterConfigDataElement = document.getElementById('jupyter-config-data');
 if (jupyterConfigDataElement !== null) {
   const config = JSON.parse(jupyterConfigDataElement.innerText);
   config.exposeAppInBrowser = true;
   jupyterConfigDataElement.innerText = JSON.stringify(config);
+  injectCodeMirror = true;
   Object.defineProperty(window, 'jupyterapp', {
     get: function () {
       return this._codeium_jupyterapp;
@@ -128,8 +131,6 @@ const SUPPORTED_CODEMIRROR_SITES = [
   { pattern: /https:\/\/(.*\.)?codeshare\.io(\/.*)?/, multiplayer: true },
 ];
 
-let injectCodeMirror = false;
-
 const addCodeMirror5GlobalInject = () =>
   Object.defineProperty(window, 'CodeMirror', {
     get: function () {
@@ -137,14 +138,19 @@ const addCodeMirror5GlobalInject = () =>
     },
     set: function (cm?: { version?: string }) {
       this._codeium_CodeMirror = cm;
+      if (injectCodeMirror) {
+        return;
+      }
       if (!cm?.version?.startsWith('5.')) {
         console.warn("Codeium doesn't support CodeMirror 6");
         return;
       }
       // We rely on the fact that the Jupyter variable is defined first.
       if (Object.prototype.hasOwnProperty.call(this, 'Jupyter')) {
+        injectCodeMirror = true;
         const jupyterState = jupyterInject(extensionId, this.Jupyter);
         addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
+        console.log('Activated Codeium');
       } else {
         let multiplayer = false;
         for (const pattern of SUPPORTED_CODEMIRROR_SITES) {
@@ -178,8 +184,6 @@ const codeMirrorState = new CodeMirrorState(extensionId, undefined, false);
 const hook = codeMirrorState.editorHook();
 
 const addCodeMirror5LocalInject = () => {
-  if (injectCodeMirror) return;
-
   const f = setInterval(() => {
     if (injectCodeMirror) {
       clearInterval(f);
@@ -208,14 +212,14 @@ const addCodeMirror5LocalInject = () => {
       const docs = [...docsByPosition.entries()].sort((a, b) => a[1] - b[1]).map(([doc]) => doc);
       codeMirrorState.docs = docs;
     }
-  }, 100);
+  }, 500);
 };
 
-getAllowList(extensionId).then((allowList) => {
-  for (const addr of allowList ?? []) {
+getAllowlist(extensionId).then((allowlist) => {
+  for (const addr of computeAllowlist(allowlist)) {
     const host = new RegExp(addr);
     if (host.test(window.location.href)) {
-      // the url matches the allowList
+      // the url matches the allowlist
       addMonacoInject();
       addCodeMirror5GlobalInject();
       addCodeMirror5LocalInject();
