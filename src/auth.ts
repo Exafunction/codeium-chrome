@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export const PROFILE_URL = 'https://www.codeium.com/profile';
+import { getGeneralProfileUrl } from './storage';
 
+// Runs in popup.
+// TODO(prem): Move to a popup-specific source file.
 export async function openAuthTab(): Promise<void> {
   const uuid = uuidv4();
   await chrome.runtime.sendMessage({
@@ -10,13 +12,25 @@ export async function openAuthTab(): Promise<void> {
       state: uuid,
     },
   });
+  const profileUrl = await getGeneralProfileUrl();
+
   await chrome.tabs.create({
-    url: `${PROFILE_URL}?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
+    url: `${profileUrl}?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
   });
 }
 
-export async function registerUser(token: string): Promise<{ api_key: string; name: string }> {
-  const url = new URL('register_user/', 'https://api.codeium.com');
+// Runs in service worker.
+// TODO(prem): Move to a service worker-specific source file.
+export async function registerUser(
+  token: string,
+  portalUrl: string | undefined
+): Promise<{ api_key: string; name: string }> {
+  const url = ((): URL => {
+    if (portalUrl === undefined) {
+      return new URL('register_user/', 'https://api.codeium.com');
+    }
+    return new URL('_route/api_server/exa.api_server_pb.ApiServerService/RegisterUser', portalUrl);
+  })();
   const response = await fetch(url, {
     body: JSON.stringify({ firebase_id_token: token }),
     method: 'POST',
@@ -25,7 +39,7 @@ export async function registerUser(token: string): Promise<{ api_key: string; na
     },
   });
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`${url}: ${response.statusText}`);
   }
   const user = await response.json();
   return user as { api_key: string; name: string };
