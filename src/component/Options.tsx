@@ -9,8 +9,13 @@ import Divider from '@mui/material/Divider';
 import React, { createRef, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { PROFILE_URL } from '../auth';
-import { computeAllowlist, defaultAllowlist, getStorageItem, setStorageItem } from '../storage';
+import {
+  computeAllowlist,
+  defaultAllowlist,
+  getGeneralProfileUrl,
+  getStorageItem,
+  setStorageItem,
+} from '../storage';
 
 const EditableList = () => {
   const [text, setText] = useState('');
@@ -118,6 +123,7 @@ const EditableList = () => {
   );
 };
 
+const profileUrl = getGeneralProfileUrl();
 const openTokenPage = async () => {
   const params = new URLSearchParams({
     response_type: 'token',
@@ -127,11 +133,18 @@ const openTokenPage = async () => {
     redirect_parameters_type: 'query',
     state: uuidv4(),
   });
-  await chrome.tabs.create({ url: `${PROFILE_URL}?${params}` });
+  await chrome.tabs.create({ url: `${await profileUrl}?${params}` });
 };
 
 const Options = () => {
-  const ref = createRef<HTMLInputElement>();
+  const tokenRef = createRef<HTMLInputElement>();
+  const portalUrlRef = createRef<HTMLInputElement>();
+  const [portalUrlText, setPortalUrlText] = useState('');
+  useEffect(() => {
+    (async () => {
+      setPortalUrlText((await getStorageItem('portalUrl')) ?? '');
+    })();
+  }, []);
   return (
     <Box sx={{ width: '100%', maxWidth: 400, bgcolor: 'background.paper' }}>
       <Typography variant="body2">
@@ -161,14 +174,14 @@ const Options = () => {
         }}
       />
       <Box sx={{ my: 2, mx: 2 }}>
-        <Typography variant="h6"> Alternative Ways to Log in </Typography>
+        <Typography variant="h6"> Alternative ways to log in </Typography>
         <TextField
           id="token"
           label="Token"
           variant="standard"
           fullWidth
           type="password"
-          inputRef={ref}
+          inputRef={tokenRef}
         />
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Button variant="text" onClick={openTokenPage} sx={{ textTransform: 'none' }}>
@@ -179,12 +192,43 @@ const Options = () => {
             variant="text"
             onClick={async () => {
               // get token from input
-              const token = ref.current?.value;
+              const token = tokenRef.current?.value;
               await chrome.runtime.sendMessage({ type: 'manual', token: token });
             }}
             sx={{ textTransform: 'none' }}
           >
             Enter Token <LoginIcon />
+          </Button>
+        </Box>
+      </Box>
+      <Divider
+        sx={{
+          padding: '0.5em',
+        }}
+      />
+      <Box sx={{ my: 2, mx: 2 }}>
+        <Typography variant="h6"> Enterprise settings </Typography>
+        <TextField
+          id="portal"
+          label="Portal URL"
+          variant="standard"
+          fullWidth
+          type="url"
+          inputRef={portalUrlRef}
+          value={portalUrlText}
+          onChange={(e) => setPortalUrlText(e.target.value)}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const portalUrl = portalUrlRef.current?.value;
+              console.log(portalUrl);
+              await setStorageItem('portalUrl', portalUrl);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Enter Portal URL <LoginIcon />
           </Button>
         </Box>
       </Box>

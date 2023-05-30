@@ -13,8 +13,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.2.18';
-const BASE_URL = 'https://server.codeium.com';
+const EXTENSION_VERSION = '1.2.26';
 
 export const CODEIUM_DEBUG = false;
 
@@ -27,9 +26,9 @@ async function getApiKey(extensionId: string): Promise<string | undefined> {
   return user?.apiKey;
 }
 
-function languageServerClient(): PromiseClient<typeof LanguageServerService> {
+function languageServerClient(baseUrl: string): PromiseClient<typeof LanguageServerService> {
   const transport = createConnectTransport({
-    baseUrl: BASE_URL,
+    baseUrl,
     useBinaryFormat: true,
   });
   return createPromiseClient(LanguageServerService, transport);
@@ -53,10 +52,15 @@ export interface IdeInfo {
 }
 
 export class LanguageServerServiceWorkerClient {
-  client = languageServerClient();
+  // Note that the URL won't refresh post-initialization.
+  client: Promise<PromiseClient<typeof LanguageServerService>>;
   private abortController?: AbortController;
 
-  constructor(readonly sessionId: string) {}
+  constructor(baseUrlPromise: Promise<string>, private readonly sessionId: string) {
+    this.client = (async (): Promise<PromiseClient<typeof LanguageServerService>> => {
+      return languageServerClient(await baseUrlPromise);
+    })();
+  }
 
   getHeaders(apiKey: string | undefined): Record<string, string> {
     if (apiKey === undefined) {
@@ -72,7 +76,7 @@ export class LanguageServerServiceWorkerClient {
     this.abortController?.abort();
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
-    const getCompletionsPromise = this.client.getCompletions(request, {
+    const getCompletionsPromise = (await this.client).getCompletions(request, {
       signal,
       headers: this.getHeaders(request.metadata?.apiKey),
     });
@@ -105,7 +109,9 @@ export class LanguageServerServiceWorkerClient {
     acceptCompletionRequest: PartialMessage<AcceptCompletionRequest>
   ): Promise<void> {
     try {
-      await this.client.acceptCompletion(acceptCompletionRequest, {
+      await (
+        await this.client
+      ).acceptCompletion(acceptCompletionRequest, {
         headers: this.getHeaders(acceptCompletionRequest.metadata?.apiKey),
       });
     } catch (err) {
