@@ -9,6 +9,7 @@ import {
 import { loggedIn, loggedOut, unhealthy } from './shared';
 import {
   defaultAllowlist,
+  getGeneralPortalUrl,
   getStorageItem,
   initializeStorageWithDefaults,
   setStorageItem,
@@ -36,8 +37,15 @@ chrome.runtime.onInstalled.addListener(async () => {
     // Inline the code for openAuthTab() because we can't invoke sendMessage.
     const uuid = uuidv4();
     authStates.push(uuid);
+    const portalUrl = await (async (): Promise<string> => {
+      const url = await getGeneralPortalUrl();
+      if (url === undefined) {
+        return 'https://www.codeium.com';
+      }
+      return url;
+    })();
     await chrome.tabs.create({
-      url: `https://www.codeium.com/profile?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
+      url: `${portalUrl}/profile?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
     });
   } else {
     await loggedIn();
@@ -81,7 +89,6 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     return;
   }
   authStates.splice(stateIndex, 1);
-  console.log('Obtained token');
   await login(typedMessage.token);
 });
 
@@ -93,13 +100,13 @@ chrome.runtime.onStartup.addListener(async () => {
   }
 });
 
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener((message) => {
   // TODO(prem): Strongly type this.
   if (message.type === 'state') {
     const payload = message.payload as { state: string };
     authStates.push(payload.state);
   } else if (message.type === 'manual') {
-    await login(message.token);
+    login(message.token);
   } else {
     console.log('Unrecognized message:', message);
   }
@@ -107,8 +114,13 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
 const clientMap = new Map<string, LanguageServerServiceWorkerClient>();
 
+// TODO(prem): Is it safe to make this listener async to simplify the LanguageServerServiceWorkerClient constructor?
 chrome.runtime.onConnectExternal.addListener((port) => {
-  clientMap.set(port.name, new LanguageServerServiceWorkerClient(port.name));
+  // TODO(prem): Technically this URL isn't synchronized with the user/API key.
+  clientMap.set(
+    port.name,
+    new LanguageServerServiceWorkerClient(getLanguageServerUrl(), port.name)
+  );
   port.onDisconnect.addListener((port) => {
     clientMap.delete(port.name);
   });
@@ -134,8 +146,13 @@ chrome.runtime.onConnectExternal.addListener((port) => {
 
 async function login(token: string) {
   try {
-    const user = await registerUser(token);
-    await setStorageItem('user', { apiKey: user.api_key, name: user.name });
+    const portalUrl = await getGeneralPortalUrl();
+    const user = await registerUser(token, portalUrl);
+    await setStorageItem('user', {
+      apiKey: user.api_key,
+      name: user.name,
+      userPortalUrl: portalUrl,
+    });
     await loggedIn();
     // TODO(prem): Open popup.
     // https://github.com/GoogleChrome/developer.chrome.com/issues/2602
@@ -143,4 +160,13 @@ async function login(token: string) {
   } catch (error) {
     console.log(error);
   }
+}
+
+async function getLanguageServerUrl(): Promise<string> {
+  const user = await getStorageItem('user');
+  const userPortalUrl = user?.userPortalUrl;
+  if (userPortalUrl === undefined || userPortalUrl === '') {
+    return 'https://server.codeium.com';
+  }
+  return `${userPortalUrl}/_route/language_server`;
 }

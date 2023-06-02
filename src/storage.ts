@@ -1,13 +1,14 @@
-// Define your storage data here
 export interface Storage {
   user?: {
     apiKey?: string;
     name?: string;
+    userPortalUrl?: string;
   };
   settings: Record<string, unknown>;
   lastError?: {
     message?: string;
   };
+  portalUrl?: string;
   // regexes of domains to watch
   allowlist?: {
     // Defaults at the time of saving the setting.
@@ -100,6 +101,34 @@ export async function initializeStorageWithDefaults(defaults: Storage) {
   const currentStorageData = await getStorageData();
   const newStorageData = Object.assign({}, defaults, currentStorageData);
   await setStorageData(newStorageData);
+}
+
+export async function getGeneralPortalUrl(): Promise<string | undefined> {
+  const portalUrl = await getStorageItem('portalUrl');
+  if (portalUrl === undefined || portalUrl === '') {
+    return undefined;
+  }
+  try {
+    new URL(portalUrl);
+  } catch (error) {
+    console.log('Invalid portal URL:', portalUrl);
+    return undefined;
+  }
+  return portalUrl;
+}
+
+// Note that this gets you the profile URL given the current portal URL, not the
+// specific profile URL of the logged in account.
+export async function getGeneralProfileUrl(): Promise<string> {
+  const portalUrl = await (async (): Promise<string> => {
+    const url = await getGeneralPortalUrl();
+    if (url === undefined) {
+      return 'https://www.codeium.com';
+    }
+    return url;
+  })();
+  console.log('Portal URL used for profile:', portalUrl);
+  return `${portalUrl}/profile`;
 }
 
 // default allowlist

@@ -14,6 +14,19 @@ getStorageItem('user')
     const usernameP = document.getElementById('username');
     if (usernameP !== null && user !== undefined) {
       usernameP.textContent = `Welcome, ${user.name}`;
+      if (user.userPortalUrl !== undefined && user.userPortalUrl !== '') {
+        const br = document.createElement('br');
+        usernameP.appendChild(br);
+        const a = document.createElement('a');
+        const linkText = document.createTextNode('Portal');
+        a.appendChild(linkText);
+        a.title = 'Portal';
+        a.href = user.userPortalUrl;
+        a.addEventListener('click', () => {
+          chrome.tabs.create({ url: user.userPortalUrl });
+        });
+        usernameP.appendChild(a);
+      }
     }
   })
   .catch((error) => {

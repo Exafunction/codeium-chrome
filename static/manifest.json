@@ -1,7 +1,7 @@
 {
   "name": "Codeium: AI Code Autocompletion on all IDEs",
   "description": "Your modern coding superpower. Get code completions in Colab and more.",
-  "version": "1.2.18",
+  "version": "1.2.26",
   "manifest_version": 3,
   "background": {
     "service_worker": "serviceWorker.js"
@@ -11,7 +11,8 @@
       "matches": ["<all_urls>"],
       "css": ["codeium.css"],
       "js": ["contentScript.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "web_accessible_resources": [
