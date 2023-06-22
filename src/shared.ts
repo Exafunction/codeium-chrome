@@ -1,4 +1,12 @@
-import { setStorageItem } from './storage';
+import { getStorageItem, setStorageItem } from './storage';
+
+// Check if lastError is empty dict and clear it if not empty.
+async function clearLastError(): Promise<void> {
+  const lastError = await getStorageItem('lastError');
+  if (lastError && Object.keys(lastError).length === 0) {
+    await setStorageItem('lastError', {});
+  }
+}
 
 export async function loggedOut(): Promise<void> {
   await Promise.all([
@@ -13,7 +21,7 @@ export async function loggedOut(): Promise<void> {
       },
     }),
     chrome.action.setTitle({ title: 'Codeium' }),
-    setStorageItem('lastError', {}),
+    clearLastError(),
   ]);
 }
 
@@ -30,7 +38,7 @@ export async function loggedIn(): Promise<void> {
       },
     }),
     chrome.action.setTitle({ title: 'Codeium' }),
-    setStorageItem('lastError', {}),
+    clearLastError(),
   ]);
 }
 
