@@ -83,13 +83,10 @@ chrome.runtime.onMessageExternal.addListener(async (message, sender, sendRespons
     return;
   }
   const typedMessage = message as { token: string; state: string };
-  const stateIndex = authStates.indexOf(typedMessage.state);
-  if (stateIndex === -1) {
-    console.log('Unexpected state:', typedMessage.state);
-    return;
+  const user = await getStorageItem('user');
+  if (user?.apiKey === undefined) {
+    await login(typedMessage.token);
   }
-  authStates.splice(stateIndex, 1);
-  await login(typedMessage.token);
 });
 
 chrome.runtime.onStartup.addListener(async () => {
