@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension-webpack",
-  "version": "1.2.40",
+  "version": "1.2.52",
   "description": "Get started with Chrome extensions development using webpack, Typescript, Sass, and more",
   "scripts": {
     "generate": "rm -rf ./proto && node generate.js",

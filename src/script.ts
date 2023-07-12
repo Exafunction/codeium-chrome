@@ -76,7 +76,7 @@ const addMonacoInject = () =>
         }
 
         const completionProvider = new MonacoCompletionProvider(extensionId, injectMonaco);
-        if (!_monaco.languages.registerInlineCompletionsProvider) {
+        if (!_monaco.languages.registerCompletionItemProvider) {
           return;
         }
         _monaco.languages.registerInlineCompletionsProvider({ pattern: '**' }, completionProvider);
