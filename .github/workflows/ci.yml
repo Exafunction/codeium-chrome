@@ -24,3 +24,19 @@ jobs:
       - run: npm install
       - run: npm run prettier:check
       - run: npm run build
+  test-enterprise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files
+      - run: npm install
+      - run: npm run prettier:check
+      - run: npm run build:enterprise
