@@ -13,7 +13,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.2.52';
+const EXTENSION_VERSION = '1.2.58';
 
 export const CODEIUM_DEBUG = false;
 
@@ -53,12 +53,16 @@ export interface IdeInfo {
 
 export class LanguageServerServiceWorkerClient {
   // Note that the URL won't refresh post-initialization.
-  client: Promise<PromiseClient<typeof LanguageServerService>>;
+  client: Promise<PromiseClient<typeof LanguageServerService> | undefined>;
   private abortController?: AbortController;
 
-  constructor(baseUrlPromise: Promise<string>, private readonly sessionId: string) {
-    this.client = (async (): Promise<PromiseClient<typeof LanguageServerService>> => {
-      return languageServerClient(await baseUrlPromise);
+  constructor(baseUrlPromise: Promise<string | undefined>, private readonly sessionId: string) {
+    this.client = (async (): Promise<PromiseClient<typeof LanguageServerService> | undefined> => {
+      const baseUrl = await baseUrlPromise;
+      if (baseUrl === undefined) {
+        return undefined;
+      }
+      return languageServerClient(baseUrl);
     })();
   }
 
@@ -76,7 +80,7 @@ export class LanguageServerServiceWorkerClient {
     this.abortController?.abort();
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
-    const getCompletionsPromise = (await this.client).getCompletions(request, {
+    const getCompletionsPromise = (await this.client)?.getCompletions(request, {
       signal,
       headers: this.getHeaders(request.metadata?.apiKey),
     });
@@ -111,7 +115,7 @@ export class LanguageServerServiceWorkerClient {
     try {
       await (
         await this.client
-      ).acceptCompletion(acceptCompletionRequest, {
+      )?.acceptCompletion(acceptCompletionRequest, {
         headers: this.getHeaders(acceptCompletionRequest.metadata?.apiKey),
       });
     } catch (err) {

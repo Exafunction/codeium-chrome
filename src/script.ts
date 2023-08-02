@@ -14,7 +14,7 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getAllowlist(extensionId: string): Promise<Storage['allowlist'] | undefined> {
+async function getAllowlist(extensionId: string): Promise<Storage['allowlist']> {
   const allowlist = await new Promise<Storage['allowlist']>((resolve) => {
     chrome.runtime.sendMessage(
       extensionId,
@@ -28,7 +28,7 @@ async function getAllowlist(extensionId: string): Promise<Storage['allowlist'] |
 }
 
 // Clear any bad state from another tab.
-chrome.runtime.sendMessage(extensionId, { type: 'success' });
+void chrome.runtime.sendMessage(extensionId, { type: 'success' });
 
 const SUPPORTED_MONACO_SITES = new Map<RegExp, MonacoSite>([
   [/https:\/\/colab.research\.google\.com\/.*/, OMonacoSite.COLAB],
@@ -84,7 +84,9 @@ const addMonacoInject = () =>
           'codeium.acceptCompletion',
           (_: unknown, apiKey: string, completionId: string, callback?: () => void) => {
             callback?.();
-            completionProvider.acceptedLastCompletion(apiKey, completionId);
+            completionProvider.acceptedLastCompletion(apiKey, completionId).catch((e) => {
+              console.error(e);
+            });
           }
         );
         _monaco.editor.onDidCreateEditor((editor: monaco.editor.ICodeEditor) => {
@@ -112,10 +114,16 @@ if (jupyterConfigDataElement !== null) {
       if (_jupyterapp?.version.startsWith('3.')) {
         const p = getPlugin(extensionId, _jupyterapp);
         _jupyterapp.registerPlugin(p);
-        _jupyterapp.activatePlugin(p.id);
-        console.log('Activated Codeium: Jupyter');
+        _jupyterapp.activatePlugin(p.id).then(
+          () => {
+            console.log('Activated Codeium: Jupyter');
+          },
+          (e) => {
+            console.error(e);
+          }
+        );
       } else {
-        chrome.runtime.sendMessage(extensionId, {
+        void chrome.runtime.sendMessage(extensionId, {
           type: 'error',
           message: 'Only JupyterLab 3.x is supported',
         });
@@ -215,15 +223,20 @@ const addCodeMirror5LocalInject = () => {
   }, 500);
 };
 
-getAllowlist(extensionId).then((allowlist) => {
-  for (const addr of computeAllowlist(allowlist)) {
-    const host = new RegExp(addr);
-    if (host.test(window.location.href)) {
-      // the url matches the allowlist
-      addMonacoInject();
-      addCodeMirror5GlobalInject();
-      addCodeMirror5LocalInject();
-      return;
+getAllowlist(extensionId).then(
+  (allowlist) => {
+    for (const addr of computeAllowlist(allowlist)) {
+      const host = new RegExp(addr);
+      if (host.test(window.location.href)) {
+        // the url matches the allowlist
+        addMonacoInject();
+        addCodeMirror5GlobalInject();
+        addCodeMirror5LocalInject();
+        return;
+      }
     }
+  },
+  (e) => {
+    console.error(e);
   }
-});
+);

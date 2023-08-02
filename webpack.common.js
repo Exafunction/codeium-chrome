@@ -4,9 +4,10 @@ const DotenvPlugin = require('dotenv-webpack');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { DefinePlugin } = require('webpack');
 
-/**@type {import('webpack').Configuration}*/
-module.exports = {
+/**@type {(env: any) => import('webpack').Configuration}*/
+module.exports = (env) => ({
   entry: {
     serviceWorker: './src/serviceWorker.ts',
     contentScript: './src/contentScript.ts',
@@ -56,10 +57,28 @@ module.exports = {
       filename: 'styles/[name].css',
     }),
     new CopyPlugin({
-      patterns: [{ from: 'static' }],
+      patterns: [
+        {
+          from: 'static',
+          transform: (content, resourcePath) => {
+            if (!env.enterprise) {
+              return content;
+            }
+            if (!resourcePath.endsWith('manifest.json')) {
+              return content;
+            }
+            const manifest = JSON.parse(content.toString());
+            manifest.name = 'Codeium Enterprise';
+            return JSON.stringify(manifest);
+          },
+        },
+      ],
+    }),
+    new DefinePlugin({
+      CODEIUM_ENTERPRISE: JSON.stringify(env.enterprise),
     }),
   ],
   experiments: {
     topLevelAwait: true,
   },
-};
+});

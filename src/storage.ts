@@ -119,15 +119,20 @@ export async function getGeneralPortalUrl(): Promise<string | undefined> {
 
 // Note that this gets you the profile URL given the current portal URL, not the
 // specific profile URL of the logged in account.
-export async function getGeneralProfileUrl(): Promise<string> {
-  const portalUrl = await (async (): Promise<string> => {
+export async function getGeneralProfileUrl(): Promise<string | undefined> {
+  const portalUrl = await (async (): Promise<string | undefined> => {
     const url = await getGeneralPortalUrl();
     if (url === undefined) {
+      if (CODEIUM_ENTERPRISE) {
+        return undefined;
+      }
       return 'https://www.codeium.com';
     }
     return url;
   })();
-  console.log('Portal URL used for profile:', portalUrl);
+  if (portalUrl === undefined) {
+    return undefined;
+  }
   return `${portalUrl}/profile`;
 }
 

@@ -27,7 +27,9 @@ const EditableList = () => {
     (async () => {
       const allowlist = computeAllowlist(await getStorageItem('allowlist'));
       setText(allowlist.join('\n'));
-    })();
+    })().catch((e) => {
+      console.error(e);
+    });
   }, []);
 
   return (
@@ -54,7 +56,7 @@ const EditableList = () => {
 
       <Button
         variant="text"
-        onClick={() => {
+        onClick={async () => {
           const lst = text
             .split('\n')
             .map((x) => x.trim())
@@ -69,7 +71,7 @@ const EditableList = () => {
               return;
             }
           }
-          setStorageItem('allowlist', { defaults: defaultAllowlist, current: lst });
+          await setStorageItem('allowlist', { defaults: defaultAllowlist, current: lst });
           setSeverity('success');
           setMessage('Saved successfully');
           setOpen(true);
@@ -123,8 +125,11 @@ const EditableList = () => {
   );
 };
 
-const profileUrl = getGeneralProfileUrl();
 const openTokenPage = async () => {
+  const profileUrl = await getGeneralProfileUrl();
+  if (profileUrl === undefined) {
+    return;
+  }
   const params = new URLSearchParams({
     response_type: 'token',
     redirect_uri: 'chrome-show-auth-token',
@@ -133,7 +138,7 @@ const openTokenPage = async () => {
     redirect_parameters_type: 'query',
     state: uuidv4(),
   });
-  await chrome.tabs.create({ url: `${await profileUrl}?${params}` });
+  await chrome.tabs.create({ url: `${profileUrl}?${params}` });
 };
 
 const Options = () => {
@@ -143,36 +148,42 @@ const Options = () => {
   useEffect(() => {
     (async () => {
       setPortalUrlText((await getStorageItem('portalUrl')) ?? '');
-    })();
+    })().catch((e) => {
+      console.error(e);
+    });
   }, []);
   return (
     <Box sx={{ width: '100%', maxWidth: 400, bgcolor: 'background.paper' }}>
-      <Typography variant="body2">
-        <SettingsIcon
-          fontSize="small"
-          sx={{
-            verticalAlign: 'bottom',
-            marginRight: '0.2em',
-            marginLeft: '0.4em',
-            bottom: '-0.1em',
-          }}
-        />{' '}
-        Edit telemetry settings at the{' '}
-        <Link href="https://codeium.com/profile" target="_blank">
-          Codeium website
-          <OpenInNewIcon
-            fontSize="small"
+      {!CODEIUM_ENTERPRISE && (
+        <>
+          <Typography variant="body2">
+            <SettingsIcon
+              fontSize="small"
+              sx={{
+                verticalAlign: 'bottom',
+                marginRight: '0.2em',
+                marginLeft: '0.4em',
+                bottom: '-0.1em',
+              }}
+            />{' '}
+            Edit telemetry settings at the{' '}
+            <Link href="https://codeium.com/profile" target="_blank">
+              Codeium website
+              <OpenInNewIcon
+                fontSize="small"
+                sx={{
+                  verticalAlign: 'bottom',
+                }}
+              />
+            </Link>
+          </Typography>
+          <Divider
             sx={{
-              verticalAlign: 'bottom',
+              padding: '0.5em',
             }}
           />
-        </Link>
-      </Typography>
-      <Divider
-        sx={{
-          padding: '0.5em',
-        }}
-      />
+        </>
+      )}
       <Box sx={{ my: 2, mx: 2 }}>
         <Typography variant="h6"> Alternative ways to log in </Typography>
         <TextField
