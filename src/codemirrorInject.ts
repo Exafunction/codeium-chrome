@@ -66,7 +66,7 @@ export class CodeMirrorState {
           }
         }
 
-        this.codeMirrorManager.triggerCompletion(
+        await this.codeMirrorManager.triggerCompletion(
           this.docs,
           editor.getDoc(),
           new EditorOptions({

@@ -78,7 +78,7 @@ class JupyterState {
           }
           const textModels = this.notebook.get_cells().map((cell) => cell.code_mirror.getDoc());
 
-          codeMirrorManager.triggerCompletion(
+          await codeMirrorManager.triggerCompletion(
             textModels,
             this.code_mirror.getDoc(),
             new EditorOptions({

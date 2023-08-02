@@ -137,7 +137,7 @@ class CodeiumPlugin {
         ]
       );
     });
-    chrome.runtime.sendMessage(this.extensionId, { type: 'success' }); // no await
+    void chrome.runtime.sendMessage(this.extensionId, { type: 'success' });
     return false;
   }
 }

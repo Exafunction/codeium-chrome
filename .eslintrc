@@ -47,7 +47,8 @@
       }
     ],
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"],
-    "@typescript-eslint/no-unnecessary-condition": "off"
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unnecessary-condition": "off",
+    "@typescript-eslint/no-floating-promises": "error"
   }
 }

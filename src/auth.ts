@@ -13,6 +13,9 @@ export async function openAuthTab(): Promise<void> {
     },
   });
   const profileUrl = await getGeneralProfileUrl();
+  if (profileUrl === undefined) {
+    return;
+  }
 
   await chrome.tabs.create({
     url: `${profileUrl}?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
@@ -27,6 +30,9 @@ export async function registerUser(
 ): Promise<{ api_key: string; name: string }> {
   const url = ((): URL => {
     if (portalUrl === undefined) {
+      if (CODEIUM_ENTERPRISE) {
+        throw new Error('portalUrl is undefined');
+      }
       return new URL('register_user/', 'https://api.codeium.com');
     }
     return new URL('_route/api_server/exa.api_server_pb.ApiServerService/RegisterUser', portalUrl);

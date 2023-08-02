@@ -37,16 +37,21 @@ chrome.runtime.onInstalled.addListener(async () => {
     // Inline the code for openAuthTab() because we can't invoke sendMessage.
     const uuid = uuidv4();
     authStates.push(uuid);
-    const portalUrl = await (async (): Promise<string> => {
+    const portalUrl = await (async (): Promise<string | undefined> => {
       const url = await getGeneralPortalUrl();
       if (url === undefined) {
+        if (CODEIUM_ENTERPRISE) {
+          return undefined;
+        }
         return 'https://www.codeium.com';
       }
       return url;
     })();
-    await chrome.tabs.create({
-      url: `${portalUrl}/profile?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
-    });
+    if (portalUrl !== undefined) {
+      await chrome.tabs.create({
+        url: `${portalUrl}/profile?redirect_uri=chrome-extension://${chrome.runtime.id}&state=${uuid}`,
+      });
+    }
   } else {
     await loggedIn();
   }
@@ -56,37 +61,55 @@ chrome.runtime.onInstalled.addListener(async () => {
 //  - website auth
 //  - request for api key
 //  - set icon and error message
-chrome.runtime.onMessageExternal.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   if (message.type === 'user') {
-    const user = await getStorageItem('user');
-    sendResponse(user);
-    if (user?.apiKey === undefined) {
-      await loggedOut();
-    }
-    return;
+    (async () => {
+      const user = await getStorageItem('user');
+      sendResponse(user);
+      if (user?.apiKey === undefined) {
+        await loggedOut();
+      }
+    })().catch((e) => {
+      console.error(e);
+    });
+    return true;
   }
   if (message.type === 'allowlist') {
-    const allowlist = await getStorageItem('allowlist');
-    sendResponse(allowlist);
-    return;
+    (async () => {
+      const allowlist = await getStorageItem('allowlist');
+      sendResponse(allowlist);
+    })().catch((e) => {
+      console.error(e);
+    });
+    return true;
   }
   if (message.type == 'error') {
-    await unhealthy(message.message);
+    unhealthy(message.message).catch((e) => {
+      console.error(e);
+    });
+    // No response needed.
     return;
   }
   if (message.type == 'success') {
-    await loggedIn();
+    loggedIn().catch((e) => {
+      console.error(e);
+    });
+    // No response needed.
     return;
   }
   if (typeof message.token !== 'string' || typeof message.state !== 'string') {
     console.log('Unexpected message:', message);
     return;
   }
-  const typedMessage = message as { token: string; state: string };
-  const user = await getStorageItem('user');
-  if (user?.apiKey === undefined) {
-    await login(typedMessage.token);
-  }
+  (async () => {
+    const typedMessage = message as { token: string; state: string };
+    const user = await getStorageItem('user');
+    if (user?.apiKey === undefined) {
+      await login(typedMessage.token);
+    }
+  })().catch((e) => {
+    console.error(e);
+  });
 });
 
 chrome.runtime.onStartup.addListener(async () => {
@@ -103,7 +126,9 @@ chrome.runtime.onMessage.addListener((message) => {
     const payload = message.payload as { state: string };
     authStates.push(payload.state);
   } else if (message.type === 'manual') {
-    login(message.token);
+    login(message.token).catch((e) => {
+      console.error(e);
+    });
   } else {
     console.log('Unrecognized message:', message);
   }
@@ -159,10 +184,13 @@ async function login(token: string) {
   }
 }
 
-async function getLanguageServerUrl(): Promise<string> {
+async function getLanguageServerUrl(): Promise<string | undefined> {
   const user = await getStorageItem('user');
   const userPortalUrl = user?.userPortalUrl;
   if (userPortalUrl === undefined || userPortalUrl === '') {
+    if (CODEIUM_ENTERPRISE) {
+      return undefined;
+    }
     return 'https://server.codeium.com';
   }
   return `${userPortalUrl}/_route/language_server`;

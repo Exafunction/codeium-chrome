@@ -1,12 +1,14 @@
 {
-  "name": "chrome-extension-webpack",
-  "version": "1.2.52",
-  "description": "Get started with Chrome extensions development using webpack, Typescript, Sass, and more",
+  "name": "codeium-chrome",
+  "version": "1.2.58",
+  "description": "",
   "scripts": {
     "generate": "rm -rf ./proto && node generate.js",
     "start": "npm run generate && webpack --watch --config webpack.dev.js",
-    "build": "npm run lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
-    "lint": "npm run generate && tsc --noEmit && eslint --ext .ts,.tsx --max-warnings=0 .",
+    "start:enterprise": "npm run generate && webpack --watch --config webpack.dev.js --env enterprise",
+    "build": "npm run generate && npm run lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
+    "build:enterprise": "npm run generate && npm run lint && webpack --config webpack.prod.js --env enterprise && cd dist && zip -r ../dist_enterprise.zip .",
+    "lint": "tsc --noEmit && eslint --ext .ts,.tsx --max-warnings=0 .",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "postinstall": "patch-package"
@@ -25,7 +27,7 @@
     "@jupyterlab/codemirror": "^3.5.2",
     "@jupyterlab/fileeditor": "^3.5.2",
     "@jupyterlab/notebook": "^3.5.2",
-    "@types/chrome": "^0.0.235",
+    "@types/chrome": "^0.0.242",
     "@types/codemirror": "^5.60.6",
     "@types/react-dom": "^18.2.1",
     "@types/uuid": "^9.0.1",

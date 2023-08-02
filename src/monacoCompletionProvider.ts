@@ -393,7 +393,9 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
   }
 
   addEditor(editor: monaco.editor.ICodeEditor): void {
-    editor.updateOptions({ inlineSuggest: { enabled: true } });
+    if (this.monacoSite !== OMonacoSite.DATABRICKS) {
+      editor.updateOptions({ inlineSuggest: { enabled: true } });
+    }
     const uri = editor.getModel()?.uri.toString();
     if (uri !== undefined) {
       this.modelUriToEditor.set(uri, editor);
