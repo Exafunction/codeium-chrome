@@ -338,10 +338,11 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     model: monaco.editor.ITextModel,
     position: monaco.Position
   ): Promise<monaco.languages.InlineCompletions | undefined> {
-    const apiKey = await this.client.apiKeyPoller.apiKey;
-    if (apiKey === undefined) {
+    const clientSettings = await this.client.clientSettingsPoller.clientSettings;
+    if (clientSettings.apiKey === undefined) {
       return;
     }
+    const apiKey = clientSettings.apiKey;
 
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = this.computeTextAndOffsets(
       model,
@@ -363,6 +364,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         tabSize: BigInt(model.getOptions().tabSize),
         insertSpaces: model.getOptions().insertSpaces,
       },
+      modelName: clientSettings.defaultModel,
     });
     const response = await this.client.getCompletions(request);
     if (response === undefined) {

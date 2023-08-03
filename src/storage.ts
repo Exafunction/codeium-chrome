@@ -1,3 +1,5 @@
+import { ValuesType } from 'utility-types';
+
 export interface Storage {
   user?: {
     apiKey?: string;
@@ -15,6 +17,7 @@ export interface Storage {
     defaults: string[];
     current: string[];
   };
+  enterpriseDefaultModel?: string;
 }
 
 // In case the defaults change over time, reconcile the saved setting with the
@@ -78,6 +81,20 @@ export function getStorageItem<Key extends keyof Storage>(key: Key): Promise<Sto
       }
 
       return resolve((result as Storage)[key]);
+    });
+  });
+}
+
+export function getStorageItems<Key extends (keyof Storage)[]>(
+  keys: [...Key]
+): Promise<Pick<Storage, ValuesType<Key>>> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(keys, (result) => {
+      if (chrome.runtime.lastError) {
+        return reject(chrome.runtime.lastError);
+      }
+
+      return resolve(result as Pick<Storage, ValuesType<Key>>);
     });
   });
 }

@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { registerUser } from './auth';
 import {
+  ClientSettings,
   GetCompletionsResponseMessage,
   LanguageServerServiceWorkerClient,
   LanguageServerWorkerRequest,
@@ -11,6 +12,7 @@ import {
   defaultAllowlist,
   getGeneralPortalUrl,
   getStorageItem,
+  getStorageItems,
   initializeStorageWithDefaults,
   setStorageItem,
 } from './storage';
@@ -69,6 +71,19 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       if (user?.apiKey === undefined) {
         await loggedOut();
       }
+    })().catch((e) => {
+      console.error(e);
+    });
+    return true;
+  }
+  if (message.type === 'clientSettings') {
+    (async () => {
+      const storageItems = await getStorageItems(['user', 'enterpriseDefaultModel']);
+      const clientSettings: ClientSettings = {
+        apiKey: storageItems.user?.apiKey,
+        defaultModel: storageItems.enterpriseDefaultModel,
+      };
+      sendResponse(clientSettings);
     })().catch((e) => {
       console.error(e);
     });

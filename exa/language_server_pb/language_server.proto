@@ -21,6 +21,8 @@ message GetCompletionsRequest {
   Document document = 2 [(validate.rules).message.required = true];
   codeium_common_pb.EditorOptions editor_options = 3 [(validate.rules).message.required = true];
   repeated Document other_documents = 5;
+
+  string model_name = 10;
 }
 
 // Next ID: 5, Previous field: latency_info.
