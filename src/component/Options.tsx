@@ -145,9 +145,16 @@ const Options = () => {
   const tokenRef = createRef<HTMLInputElement>();
   const portalUrlRef = createRef<HTMLInputElement>();
   const [portalUrlText, setPortalUrlText] = useState('');
+  const modelRef = createRef<HTMLInputElement>();
+  const [modelText, setModelText] = useState('');
   useEffect(() => {
     (async () => {
       setPortalUrlText((await getStorageItem('portalUrl')) ?? '');
+    })().catch((e) => {
+      console.error(e);
+    });
+    (async () => {
+      setModelText((await getStorageItem('enterpriseDefaultModel')) ?? '');
     })().catch((e) => {
       console.error(e);
     });
@@ -234,12 +241,32 @@ const Options = () => {
             variant="text"
             onClick={async () => {
               const portalUrl = portalUrlRef.current?.value;
-              console.log(portalUrl);
               await setStorageItem('portalUrl', portalUrl);
             }}
             sx={{ textTransform: 'none' }}
           >
             Enter Portal URL <LoginIcon />
+          </Button>
+        </Box>
+        <TextField
+          id="model"
+          label="Default Model"
+          variant="standard"
+          fullWidth
+          inputRef={modelRef}
+          value={modelText}
+          onChange={(e) => setModelText(e.target.value)}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const model = modelRef.current?.value;
+              await setStorageItem('enterpriseDefaultModel', model);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Enter Default Model <LoginIcon />
           </Button>
         </Box>
       </Box>

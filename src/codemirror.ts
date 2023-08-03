@@ -113,10 +113,11 @@ export class CodeMirrorManager {
     relativePath: string | undefined,
     createDisposables: (() => IDisposable[]) | undefined
   ): Promise<void> {
-    const apiKey = await this.client.apiKeyPoller.apiKey;
-    if (apiKey === undefined) {
+    const clientSettings = await this.client.clientSettingsPoller.clientSettings;
+    if (clientSettings.apiKey === undefined) {
       return;
     }
+    const apiKey = clientSettings.apiKey;
     const cursor = currentTextModel.getCursor();
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = computeTextAndOffsetsForCodeMirror(
       textModels,
@@ -136,6 +137,7 @@ export class CodeMirrorManager {
         relativePath,
       },
       editorOptions,
+      modelName: clientSettings.defaultModel,
     });
     const response = await this.client.getCompletions(request);
     if (response === undefined) {

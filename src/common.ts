@@ -3,7 +3,6 @@ import { createConnectTransport } from '@bufbuild/connect-web';
 import { PartialMessage } from '@bufbuild/protobuf';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Storage } from './storage';
 import { Metadata } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import { LanguageServerService } from '../proto/exa/language_server_pb/language_server_connect';
 import {
@@ -17,13 +16,21 @@ const EXTENSION_VERSION = '1.2.58';
 
 export const CODEIUM_DEBUG = false;
 
-async function getApiKey(extensionId: string): Promise<string | undefined> {
-  const user = await new Promise<Storage['user']>((resolve) => {
-    chrome.runtime.sendMessage(extensionId, { type: 'user' }, (response: Storage['user']) => {
-      resolve(response);
-    });
+export interface ClientSettings {
+  apiKey?: string;
+  defaultModel?: string;
+}
+
+async function getClientSettings(extensionId: string): Promise<ClientSettings> {
+  return await new Promise<ClientSettings>((resolve) => {
+    chrome.runtime.sendMessage(
+      extensionId,
+      { type: 'clientSettings' },
+      (response: ClientSettings) => {
+        resolve(response);
+      }
+    );
   });
-  return user?.apiKey;
 }
 
 function languageServerClient(baseUrl: string): PromiseClient<typeof LanguageServerService> {
@@ -34,14 +41,14 @@ function languageServerClient(baseUrl: string): PromiseClient<typeof LanguageSer
   return createPromiseClient(LanguageServerService, transport);
 }
 
-class ApiKeyPoller {
+class ClientSettingsPoller {
   // This is initialized to a promise at construction, then updated to a
   // non-promise later.
-  apiKey: Promise<string | undefined> | string | undefined;
+  clientSettings: Promise<ClientSettings> | ClientSettings;
   constructor(extensionId: string) {
-    this.apiKey = getApiKey(extensionId);
+    this.clientSettings = getClientSettings(extensionId);
     setInterval(async () => {
-      this.apiKey = await getApiKey(extensionId);
+      this.clientSettings = await getClientSettings(extensionId);
     }, 500);
   }
 }
@@ -152,11 +159,11 @@ export class LanguageServerClient {
   private port: chrome.runtime.Port;
   private requestId = 0;
   private promiseMap = new Map<number, (res: GetCompletionsResponse | undefined) => void>();
-  apiKeyPoller: ApiKeyPoller;
+  clientSettingsPoller: ClientSettingsPoller;
 
   constructor(readonly extensionId: string) {
     this.port = this.createPort();
-    this.apiKeyPoller = new ApiKeyPoller(extensionId);
+    this.clientSettingsPoller = new ClientSettingsPoller(extensionId);
   }
 
   createPort(): chrome.runtime.Port {
