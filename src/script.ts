@@ -227,8 +227,8 @@ getAllowlist(extensionId).then(
   (allowlist) => {
     for (const addr of computeAllowlist(allowlist)) {
       const host = new RegExp(addr);
-      if (host.test(window.location.href)) {
-        // the url matches the allowlist
+      if (host.test(window.location.href) || document.querySelector('meta[name="codeium:type"]')) {
+        // the url matches the allowlist or meta tag is found
         addMonacoInject();
         addCodeMirror5GlobalInject();
         addCodeMirror5LocalInject();
