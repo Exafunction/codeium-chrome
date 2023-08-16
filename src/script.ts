@@ -229,6 +229,7 @@ getAllowlist(extensionId).then(
       const host = new RegExp(addr);
       if (host.test(window.location.href) || document.querySelector('meta[name="codeium:type"]')) {
         // the url matches the allowlist or meta tag is found
+        // TODO: restrict injection type by the value of the content attribute (comma-separated list). see https://github.com/Exafunction/codeium-chrome/issues/28
         addMonacoInject();
         addCodeMirror5GlobalInject();
         addCodeMirror5LocalInject();
