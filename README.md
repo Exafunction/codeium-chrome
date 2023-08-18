@@ -28,6 +28,7 @@ _Free, ultrafast code autocomplete for Chrome_
 - [Google Colab](https://colab.research.google.com/)
 - [JSFiddle](https://jsfiddle.net/)
 - [JupyterLab 3.x/Jupyter notebooks](https://jupyter.org/)
+- [LiveCodes](https://livecodes.io/) (including [self-hosted](https://livecodes.io/docs/features/self-hosting) apps)
 - [Paperspace](https://www.paperspace.com/)
 - [Quadratic](https://www.quadratichq.com/)
 - [StackBlitz](https://stackblitz.com/)
