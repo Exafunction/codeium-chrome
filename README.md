@@ -33,7 +33,7 @@ _Free, ultrafast code autocomplete for Chrome_
 - [Quadratic](https://www.quadratichq.com/)
 - [StackBlitz](https://stackblitz.com/)
 
-Contributions are welcome! Feel free to submit pull requests and issues related to the extension.
+Contributions are welcome! Feel free to submit pull requests and issues related to the extension or to add links to supported websites.
 
 🔗 [Original Chrome extension launch announcement](https://codeium.com/blog/codeium-chrome-extension-launch)
 
