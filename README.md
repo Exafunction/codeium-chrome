@@ -28,6 +28,7 @@ _Free, ultrafast code autocomplete for Chrome_
 - [Google Colab](https://colab.research.google.com/)
 - [JSFiddle](https://jsfiddle.net/)
 - [JupyterLab 3.x/Jupyter notebooks](https://jupyter.org/)
+- [LiveCodes](https://livecodes.io/)
 - [Paperspace](https://www.paperspace.com/)
 - [Quadratic](https://www.quadratichq.com/)
 - [StackBlitz](https://stackblitz.com/)
@@ -46,7 +47,7 @@ To disable the extension in a specific page add the following meta tag:
 <meta name="codeium:type" content="none" />
 ```
 
-Contributions are welcome! Feel free to submit pull requests and issues related to the extension.
+Contributions are welcome! Feel free to submit pull requests and issues related to the extension or to add links to supported websites.
 
 🔗 [Original Chrome extension launch announcement](https://codeium.com/blog/codeium-chrome-extension-launch)
 
