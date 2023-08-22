@@ -225,15 +225,40 @@ const addCodeMirror5LocalInject = () => {
 
 getAllowlist(extensionId).then(
   (allowlist) => {
-    for (const addr of computeAllowlist(allowlist)) {
-      const host = new RegExp(addr);
-      if (host.test(window.location.href) || document.querySelector('meta[name="codeium:type"]')) {
-        // the url matches the allowlist or meta tag is found
-        // TODO: restrict injection type by the value of the content attribute (comma-separated list). see https://github.com/Exafunction/codeium-chrome/issues/28
-        addMonacoInject();
-        addCodeMirror5GlobalInject();
-        addCodeMirror5LocalInject();
-        return;
+    const validInjectTypes = ['monaco', 'codemirror5', 'none'];
+    const metaTag = document.querySelector('meta[name="codeium:type"]');
+    const injectionTypes =
+      metaTag
+        ?.getAttribute('content')
+        ?.split(',')
+        .map((x) => x.toLowerCase().trim())
+        .filter((x) => validInjectTypes.includes(x)) ?? [];
+
+    if (injectionTypes.includes('none')) {
+      // do not inject if specifically disabled
+      return;
+    }
+
+    if (injectionTypes.includes('monaco')) {
+      addMonacoInject();
+    }
+
+    if (injectionTypes.includes('codemirror5')) {
+      addCodeMirror5GlobalInject();
+      addCodeMirror5LocalInject();
+    }
+
+    if (injectionTypes.length === 0) {
+      // if no meta tag is found, check the allowlist
+      for (const addr of computeAllowlist(allowlist)) {
+        const host = new RegExp(addr);
+        if (host.test(window.location.href)) {
+          // the url matches the allowlist
+          addMonacoInject();
+          addCodeMirror5GlobalInject();
+          addCodeMirror5LocalInject();
+          return;
+        }
       }
     }
   },

@@ -33,6 +33,20 @@ _Free, ultrafast code autocomplete for Chrome_
 - [Quadratic](https://www.quadratichq.com/)
 - [StackBlitz](https://stackblitz.com/)
 
+In addition, any web page can support autocomplete in editors by adding the following meta tag to the `<head>` section of the page:
+
+```html
+<meta name="codeium:type" content="monaco" />
+```
+
+The `content` attribute accepts a comma-separated list of supported editors. These currently include: `"monaco"` and `"codemirror5"`.
+
+To disable the extension in a specific page add the following meta tag:
+
+```html
+<meta name="codeium:type" content="none" />
+```
+
 Contributions are welcome! Feel free to submit pull requests and issues related to the extension or to add links to supported websites.
 
 🔗 [Original Chrome extension launch announcement](https://codeium.com/blog/codeium-chrome-extension-launch)
