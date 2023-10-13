@@ -1,41 +1,75 @@
 {
   "name": "codeium-chrome",
-  "version": "1.2.58",
+  "version": "1.2.104",
   "description": "",
+  "license": "MIT",
   "scripts": {
+    "build": "pnpm generate && pnpm lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
+    "build:enterprise": "pnpm generate && pnpm lint && webpack --config webpack.prod.js --env enterprise && cd dist_enterprise && zip -r ../dist_enterprise.zip .",
     "generate": "rm -rf ./proto && node generate.js",
-    "start": "npm run generate && webpack --watch --config webpack.dev.js",
-    "start:enterprise": "npm run generate && webpack --watch --config webpack.dev.js --env enterprise",
-    "build": "npm run generate && npm run lint && webpack --config webpack.prod.js && cd dist && zip -r ../dist.zip .",
-    "build:enterprise": "npm run generate && npm run lint && webpack --config webpack.prod.js --env enterprise && cd dist && zip -r ../dist_enterprise.zip .",
+    "preinstall": "npx only-allow pnpm",
     "lint": "tsc --noEmit && eslint --ext .ts,.tsx --max-warnings=0 .",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
-    "postinstall": "patch-package"
+    "start": "pnpm generate && webpack --watch --config webpack.dev.js",
+    "start:enterprise": "pnpm generate && webpack --watch --config webpack.dev.js --env enterprise"
   },
-  "license": "MIT",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "pnpm prettier",
+      "pnpm lint"
+    ]
+  },
+  "browserslist": "last 10 Chrome versions",
+  "dependencies": {
+    "@babel/runtime": "^7.18.6",
+    "@bufbuild/protobuf": "^1.3.3",
+    "@connectrpc/connect": "^1.1.2",
+    "@connectrpc/connect-web": "^1.1.2",
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
+    "@mui/icons-material": "^5.11.16",
+    "@mui/material": "^5.12.2",
+    "normalize.css": "^8.0.1",
+    "object-assign": "^4.1.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "uuid": "^9.0.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@babel/plugin-transform-runtime": "^7.18.6",
     "@babel/preset-env": "^7.21.4",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
-    "@bufbuild/buf": "^1.15.0",
-    "@bufbuild/protoc-gen-connect-es": "^0.8.4",
-    "@bufbuild/protoc-gen-es": "^1.0.0",
+    "@bufbuild/buf": "^1.27.0",
+    "@bufbuild/protoc-gen-es": "^1.3.3",
+    "@connectrpc/protoc-gen-connect-es": "^1.1.2",
     "@jupyterlab/application": "^3.5.2",
+    "@jupyterlab/codeeditor": "^3.5.2",
     "@jupyterlab/codemirror": "^3.5.2",
+    "@jupyterlab/docmanager": "^3.5.2",
     "@jupyterlab/fileeditor": "^3.5.2",
     "@jupyterlab/notebook": "^3.5.2",
-    "@types/chrome": "^0.0.242",
+    "@lumino/disposable": "^2.1.2",
+    "@lumino/widgets": "^1.36.0",
+    "@types/chrome": "^0.0.246",
     "@types/codemirror": "^5.60.6",
-    "@types/react-dom": "^18.2.1",
+    "@types/prop-types": "^15.7.8",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.21",
     "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.48.1",
     "@typescript-eslint/parser": "^5.48.1",
     "babel-loader": "^8.3.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
+    "dotenv": "^16.3.1",
     "dotenv-webpack": "^8.0.0",
     "eslint": "^8.31.0",
     "eslint-config-prettier": "^8.6.0",
@@ -47,7 +81,6 @@
     "lint-staged": "^13.0.3",
     "mini-css-extract-plugin": "^2.6.1",
     "monaco-editor": "^0.34.1",
-    "patch-package": "^6.5.1",
     "prettier": "^2.8.2",
     "sass": "^1.53.0",
     "sass-loader": "^13.0.2",
@@ -57,32 +90,13 @@
     "webpack": "^5.80.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.13.3",
-    "webpack-merge": "^5.8.0"
+    "webpack-merge": "^5.8.0",
+    "yjs": "^13.6.8"
   },
-  "dependencies": {
-    "@babel/runtime": "^7.18.6",
-    "@bufbuild/connect": "^0.8.4",
-    "@bufbuild/connect-web": "^0.8.4",
-    "@bufbuild/protobuf": "^1.0.0",
-    "@emotion/react": "^11.10.6",
-    "@emotion/styled": "^11.10.6",
-    "@mui/icons-material": "^5.11.16",
-    "@mui/material": "^5.12.2",
-    "normalize.css": "^8.0.1",
-    "object-assign": "^4.1.1",
-    "react": "^17.0.2",
-    "uuid": "^9.0.0"
-  },
-  "browserslist": "last 10 Chrome versions",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
+  "pnpm": {
+    "patchedDependencies": {
+      "@jupyterlab/codeeditor@3.5.2": "patches/@jupyterlab+codeeditor+3.5.2.patch",
+      "@jupyterlab/shared-models@3.5.2": "patches/@jupyterlab+shared-models+3.5.2.patch"
     }
-  },
-  "lint-staged": {
-    "*.{ts,js}": [
-      "npm run prettier",
-      "npm run lint"
-    ]
   }
 }

@@ -1,4 +1,5 @@
 dist
+dist_enterprise
 node_modules
 .DS_Store
 proto

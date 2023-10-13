@@ -1,3 +1,5 @@
 dist
+dist_enterprise
 node_modules
 proto
+pnpm-lock.yaml

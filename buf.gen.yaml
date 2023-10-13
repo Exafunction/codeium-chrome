@@ -2,12 +2,12 @@
 # For details, see https://docs.buf.build/configuration/v1/buf-gen-yaml
 version: v1
 plugins:
-  - name: es
+  - plugin: buf.build/bufbuild/es:v1.3.3
     out: proto
     opt:
       - target=ts
       - import_extension=none
-  - name: connect-es
+  - plugin: buf.build/connectrpc/es:v1.1.2
     out: proto
     opt:
       - target=ts

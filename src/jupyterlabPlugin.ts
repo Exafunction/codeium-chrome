@@ -1,4 +1,4 @@
-import { type JupyterFrontEnd, type JupyterFrontEndPlugin } from '@jupyterlab/application';
+import type { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { type CodeEditor } from '@jupyterlab/codeeditor';
 import { type CodeMirrorEditor, type ICodeMirror } from '@jupyterlab/codemirror';
 import { type IDocumentManager } from '@jupyterlab/docmanager';

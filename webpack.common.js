@@ -43,7 +43,7 @@ module.exports = (env) => ({
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, env.enterprise ? 'dist_enterprise' : 'dist'),
     clean: true,
   },
   externals: { 'monaco-editor': 'monaco' },
