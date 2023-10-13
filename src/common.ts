@@ -1,6 +1,6 @@
-import { Code, ConnectError, PromiseClient, createPromiseClient } from '@bufbuild/connect';
-import { createConnectTransport } from '@bufbuild/connect-web';
 import { PartialMessage } from '@bufbuild/protobuf';
+import { Code, ConnectError, PromiseClient, createPromiseClient } from '@connectrpc/connect';
+import { createConnectTransport } from '@connectrpc/connect-web';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Metadata } from '../proto/exa/codeium_common_pb/codeium_common_pb';
@@ -12,7 +12,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.2.58';
+const EXTENSION_VERSION = '1.2.104';
 
 export const CODEIUM_DEBUG = false;
 

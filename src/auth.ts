@@ -35,7 +35,10 @@ export async function registerUser(
       }
       return new URL('register_user/', 'https://api.codeium.com');
     }
-    return new URL('_route/api_server/exa.api_server_pb.ApiServerService/RegisterUser', portalUrl);
+    return new URL(
+      '_route/api_server/exa.seat_management_pb.SeatManagementService/RegisterUser',
+      portalUrl
+    );
   })();
   const response = await fetch(url, {
     body: JSON.stringify({ firebase_id_token: token }),

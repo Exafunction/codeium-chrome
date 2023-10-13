@@ -18,12 +18,17 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: |
+            - args: [--frozen-lockfile]
+          standalone: true
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files
-      - run: npm install
-      - run: npm run prettier:check
-      - run: npm run build
+      - run: pnpm prettier:check
+      - run: pnpm build
   test-enterprise:
     runs-on: ubuntu-latest
     steps:
@@ -34,9 +39,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: |
+            - args: [--frozen-lockfile]
+          standalone: true
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files
-      - run: npm install
-      - run: npm run prettier:check
-      - run: npm run build:enterprise
+      - run: pnpm prettier:check
+      - run: pnpm build:enterprise

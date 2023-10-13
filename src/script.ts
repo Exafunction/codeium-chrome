@@ -1,4 +1,4 @@
-import { JupyterFrontEnd } from '@jupyterlab/application';
+import type { JupyterFrontEnd } from '@jupyterlab/application';
 import type * as monaco from 'monaco-editor';
 
 import { addListeners } from './codemirror';

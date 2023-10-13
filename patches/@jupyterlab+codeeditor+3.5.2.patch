@@ -1,7 +1,7 @@
-diff --git a/node_modules/@jupyterlab/codeeditor/lib/editor.d.ts b/node_modules/@jupyterlab/codeeditor/lib/editor.d.ts
+diff --git a/lib/editor.d.ts b/lib/editor.d.ts
 index ffe8d1f..b4fc388 100644
---- a/node_modules/@jupyterlab/codeeditor/lib/editor.d.ts
-+++ b/node_modules/@jupyterlab/codeeditor/lib/editor.d.ts
+--- a/lib/editor.d.ts
++++ b/lib/editor.d.ts
 @@ -44,6 +44,7 @@ export declare namespace CodeEditor {
      /**
       * An interface describing editor state coordinates.

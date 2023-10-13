@@ -7,7 +7,6 @@
 [![Discord](https://img.shields.io/discord/1027685395649015980?label=community&color=5865F2&logo=discord&logoColor=FFFFFF)](https://discord.gg/3XFf78nAx5)
 [![Twitter Follow](https://img.shields.io/badge/style--blue?style=social&logo=twitter&label=Follow%20%40codeiumdev)](https://twitter.com/intent/follow?screen_name=codeiumdev)
 ![License](https://img.shields.io/github/license/Exafunction/codeium-chrome)
-[![built with Codeium](https://codeium.com/badges/main)](https://codeium.com)
 
 [![Visual Studio](https://img.shields.io/visual-studio-marketplace/i/Codeium.codeium?label=Visual%20Studio&logo=visualstudio)](https://marketplace.visualstudio.com/items?itemName=Codeium.codeium)
 [![JetBrains](https://img.shields.io/jetbrains/plugin/d/20540?label=JetBrains)](https://plugins.jetbrains.com/plugin/20540-codeium/)
@@ -56,4 +55,4 @@ Contributions are welcome! Feel free to submit pull requests and issues related 
 
 To use the extension, install it from the [Chrome Web Store.](https://chrome.google.com/webstore/detail/codeium/hobjkcpmjhlegmobgonaagepfckjkceh)
 
-If you'd like to develop the extension, you'll need Node and npm. After `npm install`, use `npm run start` to develop, and `npm run build` to package.
+If you'd like to develop the extension, you'll need Node and pnpm (`npm install -g pnpm`). After `pnpm install`, use `pnpm start` to develop, and `pnpm build` to package. For the enterprise build, use `pnpm build:enterprise`.

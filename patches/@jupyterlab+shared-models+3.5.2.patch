@@ -1,7 +1,7 @@
-diff --git a/node_modules/@jupyterlab/shared-models/lib/ymodels.d.ts b/node_modules/@jupyterlab/shared-models/lib/ymodels.d.ts
+diff --git a/lib/ymodels.d.ts b/lib/ymodels.d.ts
 index 95ed330..10f65b5 100644
---- a/node_modules/@jupyterlab/shared-models/lib/ymodels.d.ts
-+++ b/node_modules/@jupyterlab/shared-models/lib/ymodels.d.ts
+--- a/lib/ymodels.d.ts
++++ b/lib/ymodels.d.ts
 @@ -14,7 +14,7 @@ export interface IYText extends models.ISharedText {
      readonly undoManager: Y.UndoManager | null;
  }
