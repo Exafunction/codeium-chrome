@@ -12,7 +12,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.2.104';
+const EXTENSION_VERSION = '1.2.106';
 
 export const CODEIUM_DEBUG = false;
 
@@ -100,14 +100,14 @@ export class LanguageServerServiceWorkerClient {
       if (err instanceof ConnectError) {
         if (err.code != Code.Canceled) {
           console.log(err.message);
-          await chrome.runtime.sendMessage(chrome.runtime.id, {
+          void chrome.runtime.sendMessage(chrome.runtime.id, {
             type: 'error',
             message: err.message,
           });
         }
       } else {
         console.log((err as Error).message);
-        await chrome.runtime.sendMessage(chrome.runtime.id, {
+        void chrome.runtime.sendMessage(chrome.runtime.id, {
           type: 'error',
           message: (err as Error).message,
         });
