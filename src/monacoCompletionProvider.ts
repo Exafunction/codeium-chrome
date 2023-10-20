@@ -382,7 +382,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         )
       )
       .filter((item): item is monaco.languages.InlineCompletion => item !== undefined);
-    await chrome.runtime.sendMessage(this.extensionId, { type: 'success' });
+    void chrome.runtime.sendMessage(this.extensionId, { type: 'success' });
     return { items };
   }
 
