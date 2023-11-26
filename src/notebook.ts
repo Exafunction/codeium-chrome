@@ -40,18 +40,19 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
   const textModels = maybeNotebook.textModels ?? [];
   const modelLanguage = maybeNotebook.getLanguage(maybeNotebook.currentTextModel, undefined);
   const modelIsMarkdown = modelLanguage === Language.MARKDOWN;
+  const cellSplitString = modelIsMarkdown ? '\n\n' : '\nCELL:\n';
   const modelIsExpected = isAllowedLanguage(modelLanguage);
   const relevantDocumentTexts: string[] = [];
   let additionalUtf8ByteOffset = 0;
   let found = false;
   for (const [idx, previousModel] of textModels.entries()) {
     if (modelIsExpected && maybeNotebook.currentTextModel === previousModel) {
-      // There is an offset for all previous cells and the \n\n spacing after each one.
+      // There is an offset for all previous cells and the newline spacing after each one.
       additionalUtf8ByteOffset =
         relevantDocumentTexts
           .map((el) => numCodeUnitsToNumUtf8Bytes(el))
           .reduce((a, b) => a + b, 0) +
-        '\n\n'.length * relevantDocumentTexts.length;
+        cellSplitString.length * relevantDocumentTexts.length;
       found = true;
     }
     const previousModelLanguage = maybeNotebook.getLanguage(previousModel, idx);
@@ -76,7 +77,7 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
     }
   }
   const currentModelText = maybeNotebook.getText(maybeNotebook.currentTextModel);
-  const text = found ? relevantDocumentTexts.join('\n\n') : currentModelText;
+  const text = found ? relevantDocumentTexts.join(cellSplitString) : currentModelText;
   const utf8ByteOffset = numCodeUnitsToNumUtf8Bytes(
     currentModelText,
     maybeNotebook.utf16CodeUnitOffset

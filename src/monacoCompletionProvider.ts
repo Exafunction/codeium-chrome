@@ -4,7 +4,7 @@ import { IdeInfo, LanguageServerClient } from './common';
 import { getLanguage } from './monacoLanguages';
 import { TextAndOffsets, computeTextAndOffsets } from './notebook';
 import { numUtf8BytesToNumCodeUnits } from './utf';
-import { Language } from '../proto/exa/codeium_common_pb/codeium_common_pb';
+import { ExperimentKey, Language } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import {
   CompletionItem,
   GetCompletionsRequest,
@@ -365,6 +365,9 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         insertSpaces: model.getOptions().insertSpaces,
       },
       modelName: clientSettings.defaultModel,
+      experimentConfig: {
+        forceEnableExperiments: [ExperimentKey.JUPYTER_FORMAT],
+      },
     });
     const response = await this.client.getCompletions(request);
     if (response === undefined) {

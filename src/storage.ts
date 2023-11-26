@@ -166,4 +166,5 @@ export const defaultAllowlist = [
   /https:\/\/console\.paperspace\.com\/.*\/notebook\/.*/,
   /https?:\/\/www\.codewars\.com(\/.*)?/,
   /https:\/\/(.*\.)?github\.com(\/.*)?/,
+  /http:\/\/(localhost|127\.0\.0\.1):[0-9]+\/.*\.ipynb/,
 ].map((reg) => reg.source);
