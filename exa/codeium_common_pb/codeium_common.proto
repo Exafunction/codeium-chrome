@@ -10,6 +10,11 @@ import "validate/validate.proto";
 
 option go_package = "github.com/Exafunction/Exafunction/exa/codeium_common_pb";
 
+enum ExperimentKey {
+  UNSPECIFIED = 0;
+  JUPYTER_FORMAT = 77;
+}
+
 // Next ID: 12, Previous field: entropy.
 message Completion {
   string completion_id = 1;
