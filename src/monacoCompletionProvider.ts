@@ -187,6 +187,20 @@ function colabRelativePath(): string | undefined {
   return fileId.fileId;
 }
 
+function deepnoteAndDatabricksRelativePath(url: string): string | undefined {
+  // Deepnote URLs look like
+  // https://deepnote.com/workspace/{workspaceId}/path/to/notebook/{notebookName}.
+
+  // Databricks URLs look like
+  // https://{region}.cloud.databricks.com/?o={xxxx}#notebook/{yyyy}/command/{zzzz}
+  // where xxxx, yyyy, zzzz are 16 digit numbers.
+  const notebookName = url.split('/').pop();
+  if (notebookName === undefined) {
+    return undefined;
+  }
+  return `${notebookName}.ipynb`;
+}
+
 export class MonacoCompletionProvider implements monaco.languages.InlineCompletionsProvider {
   modelUriToEditor = new Map<string, monaco.editor.ICodeEditor>();
   client: LanguageServerClient;
@@ -238,7 +252,11 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     if (this.monacoSite === OMonacoSite.COLAB) {
       return colabRelativePath();
     }
-    // TODO(prem): Adopt some convention for other sites.
+    const url = window.location.href;
+    if (this.monacoSite === OMonacoSite.DEEPNOTE || this.monacoSite === OMonacoSite.DATABRICKS) {
+      return deepnoteAndDatabricksRelativePath(url);
+    }
+    // Perhaps add something for (Stackblitz or Quadratic)?
   }
 
   private absolutePath(model: monaco.editor.ITextModel): string | undefined {

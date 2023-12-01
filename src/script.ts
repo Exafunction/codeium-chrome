@@ -79,21 +79,26 @@ const addMonacoInject = () =>
         if (!_monaco.languages.registerInlineCompletionsProvider) {
           return;
         }
-        _monaco.languages.registerInlineCompletionsProvider({ pattern: '**' }, completionProvider);
-        _monaco.editor.registerCommand(
-          'codeium.acceptCompletion',
-          (_: unknown, apiKey: string, completionId: string, callback?: () => void) => {
-            callback?.();
-            completionProvider.acceptedLastCompletion(apiKey, completionId).catch((e) => {
-              console.error(e);
-            });
-          }
-        );
-        _monaco.editor.onDidCreateEditor((editor: monaco.editor.ICodeEditor) => {
-          completionProvider.addEditor(editor);
+        setTimeout(() => {
+          _monaco.languages.registerInlineCompletionsProvider(
+            { pattern: '**' },
+            completionProvider
+          );
+          _monaco.editor.registerCommand(
+            'codeium.acceptCompletion',
+            (_: unknown, apiKey: string, completionId: string, callback?: () => void) => {
+              callback?.();
+              completionProvider.acceptedLastCompletion(apiKey, completionId).catch((e) => {
+                console.error(e);
+              });
+            }
+          );
+          _monaco.editor.onDidCreateEditor((editor: monaco.editor.ICodeEditor) => {
+            completionProvider.addEditor(editor);
+          });
+          console.log('Activated Codeium: Monaco');
         });
         this._codeium_monaco = _monaco;
-        console.log('Activated Codeium: Monaco');
       },
     },
   });
