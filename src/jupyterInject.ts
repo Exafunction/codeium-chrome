@@ -78,6 +78,12 @@ class JupyterState {
           }
           const textModels = this.notebook.get_cells().map((cell) => cell.code_mirror.getDoc());
 
+          const url = window.location.href;
+          // URLs are usually of the form, http://localhost:XXXX/notebooks/path/to/notebook.ipynb
+          // We only want the path to the notebook.
+          const path = new URL(url).pathname;
+          const relativePath = path.endsWith('.ipynb') ? path : undefined;
+
           await codeMirrorManager.triggerCompletion(
             textModels,
             this.code_mirror.getDoc(),
@@ -85,7 +91,7 @@ class JupyterState {
               tabSize: BigInt(editor.getOption('tabSize') ?? 4),
               insertSpaces: !(editor.getOption('indentWithTabs') ?? false),
             }),
-            undefined,
+            relativePath,
             undefined
           );
         });

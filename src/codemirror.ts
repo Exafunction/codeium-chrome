@@ -134,7 +134,7 @@ export class CodeMirrorManager {
         lineEnding: '\n',
         // We could use the regular path which could have a drive: prefix, but
         // this is probably unusual.
-        relativePath,
+        relativePath: relativePath,
       },
       editorOptions,
       modelName: clientSettings.defaultModel,
