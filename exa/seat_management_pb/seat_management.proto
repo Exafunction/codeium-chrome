@@ -1,0 +1,21 @@
+// Copyright Exafunction, Inc.
+
+syntax = "proto3";
+
+package exa.seat_management_pb;
+
+option go_package = "github.com/Exafunction/Exafunction/exa/seat_management_pb";
+
+service SeatManagementService {
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse) {}
+}
+
+message RegisterUserRequest {
+  // In enterprise deployments, this is actually a supabase auth token.
+  string firebase_id_token = 1 [json_name = "firebase_id_token"];
+}
+
+message RegisterUserResponse {
+  string api_key = 1 [json_name = "api_key"];
+  string name = 2 [json_name = "name"];
+}
