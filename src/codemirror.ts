@@ -374,7 +374,12 @@ export class CodeMirrorManager {
   }
 
   clearCompletionInitHook(): (editor: CodeMirror.Editor) => void {
+    const editors = new WeakSet<CodeMirror.Editor>();
     return (editor: CodeMirror.Editor) => {
+      if (editors.has(editor)) {
+        return;
+      }
+      editors.add(editor);
       const el = editor.getInputField().closest('.CodeMirror');
       if (el === null) {
         return;

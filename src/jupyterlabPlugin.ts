@@ -1,6 +1,6 @@
 import type { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
 import { type CodeEditor } from '@jupyterlab/codeeditor';
-import { type CodeMirrorEditor, type ICodeMirror } from '@jupyterlab/codemirror';
+import { type CodeMirrorEditor } from '@jupyterlab/codemirror';
 import { type IDocumentManager } from '@jupyterlab/docmanager';
 import { type IEditorTracker } from '@jupyterlab/fileeditor';
 import { type INotebookTracker } from '@jupyterlab/notebook';
@@ -8,7 +8,7 @@ import { type IDisposable } from '@lumino/disposable';
 import { type Widget } from '@lumino/widgets';
 import type CodeMirror from 'codemirror';
 
-import { CodeMirrorManager, addListeners } from './codemirror';
+import { CodeMirrorManager } from './codemirror';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 
 const COMMAND_ACCEPT = 'codeium:accept-completion';
@@ -30,8 +30,7 @@ class CodeiumPlugin {
     app: JupyterFrontEnd,
     notebookTracker: INotebookTracker,
     editorTracker: IEditorTracker,
-    documentManager: IDocumentManager,
-    codeMirror: ICodeMirror
+    documentManager: IDocumentManager
   ) {
     this.app = app;
     this.notebookTracker = notebookTracker;
@@ -41,7 +40,6 @@ class CodeiumPlugin {
       ideName: 'jupyterlab',
       ideVersion: `${app.name.toLowerCase()} ${app.version}`,
     });
-    addListeners(codeMirror.CodeMirror, this.codeMirrorManager);
     // The keyboard shortcuts for these commands are added and removed depending
     // on the presence of ghost text, since they cannot defer to a shortcut on a
     // parent element.
@@ -55,6 +53,7 @@ class CodeiumPlugin {
         this.codeMirrorManager.clearCompletion('user dismissed');
       },
     });
+    const clearCompletionInitHook = this.codeMirrorManager.clearCompletionInitHook();
     const keyboardHandler = this.keydownHandler.bind(this);
     // There is no cellAdded listener, so resort to maintaining a single
     // listener for all cells.
@@ -64,9 +63,11 @@ class CodeiumPlugin {
       if (cell === null) {
         return;
       }
+      clearCompletionInitHook((cell.editor as CodeMirrorEditor).editor ?? null);
       this.previousCellHandler = cell.editor.addKeydownHandler(keyboardHandler);
     }, this);
     editorTracker.widgetAdded.connect((_editorTracker, widget) => {
+      clearCompletionInitHook((widget.content.editor as CodeMirrorEditor).editor);
       widget.content.editor.addKeydownHandler(keyboardHandler);
       this.nonNotebookWidget.add(widget.id);
       widget.disposed.connect(this.removeNonNotebookWidget, this);
@@ -153,18 +154,10 @@ export function getPlugin(
       app: JupyterFrontEnd,
       notebookTracker: INotebookTracker,
       editorTracker: IEditorTracker,
-      documentManager: IDocumentManager,
-      codeMirror: ICodeMirror
+      documentManager: IDocumentManager
     ) => {
       // This indirection is necessary to get us a `this` to store state in.
-      new CodeiumPlugin(
-        extensionId,
-        app,
-        notebookTracker,
-        editorTracker,
-        documentManager,
-        codeMirror
-      );
+      new CodeiumPlugin(extensionId, app, notebookTracker, editorTracker, documentManager);
     },
     requires: [
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -176,9 +169,6 @@ export function getPlugin(
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       jupyterapp._pluginMap['@jupyterlab/docmanager-extension:plugin'].provides,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      jupyterapp._pluginMap['@jupyterlab/codemirror-extension:codemirror'].provides,
     ],
   };
 }

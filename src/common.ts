@@ -12,7 +12,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.4.25';
+const EXTENSION_VERSION = '1.6.7';
 
 export const CODEIUM_DEBUG = false;
 

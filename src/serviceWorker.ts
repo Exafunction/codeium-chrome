@@ -16,6 +16,7 @@ import {
   initializeStorageWithDefaults,
   setStorageItem,
 } from './storage';
+import { PUBLIC_API_SERVER, PUBLIC_WEBSITE } from './urls';
 import {
   AcceptCompletionRequest,
   GetCompletionsRequest,
@@ -39,13 +40,14 @@ chrome.runtime.onInstalled.addListener(async () => {
     // Inline the code for openAuthTab() because we can't invoke sendMessage.
     const uuid = uuidv4();
     authStates.push(uuid);
+    // TODO(prem): Deduplicate with Options.tsx/storage.ts.
     const portalUrl = await (async (): Promise<string | undefined> => {
       const url = await getGeneralPortalUrl();
       if (url === undefined) {
         if (CODEIUM_ENTERPRISE) {
           return undefined;
         }
-        return 'https://www.codeium.com';
+        return PUBLIC_WEBSITE;
       }
       return url;
     })();
@@ -184,7 +186,7 @@ chrome.runtime.onConnectExternal.addListener((port) => {
 async function login(token: string) {
   try {
     const portalUrl = await getGeneralPortalUrl();
-    const user = await registerUser(token, portalUrl);
+    const user = await registerUser(token);
     await setStorageItem('user', {
       apiKey: user.api_key,
       name: user.name,
@@ -206,7 +208,7 @@ async function getLanguageServerUrl(): Promise<string | undefined> {
     if (CODEIUM_ENTERPRISE) {
       return undefined;
     }
-    return 'https://server.codeium.com';
+    return PUBLIC_API_SERVER;
   }
   return `${userPortalUrl}/_route/language_server`;
 }
