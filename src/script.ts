@@ -121,7 +121,7 @@ if (jupyterConfigDataElement !== null) {
         _jupyterapp.registerPlugin(p);
         _jupyterapp.activatePlugin(p.id).then(
           () => {
-            console.log('Activated Codeium: Jupyter');
+            console.log('Activated Codeium: Jupyter 3.x');
           },
           (e) => {
             console.error(e);
@@ -134,6 +134,26 @@ if (jupyterConfigDataElement !== null) {
         });
       }
       this._codeium_jupyterapp = _jupyterapp;
+    },
+  });
+  Object.defineProperty(window, 'jupyterlab', {
+    get: function () {
+      return this._codeium_jupyterlab;
+    },
+    set: function (_jupyterlab?: JupyterFrontEnd) {
+      if (_jupyterlab?.version.startsWith('2.')) {
+        const p = getPlugin(extensionId, _jupyterlab);
+        _jupyterlab.registerPlugin(p);
+        _jupyterlab.activatePlugin(p.id).then(
+          () => {
+            console.log('Activated Codeium: Jupyter 2.x');
+          },
+          (e) => {
+            console.error(e);
+          }
+        );
+      }
+      this._codeium_jupyterlab = _jupyterlab;
     },
   });
 }

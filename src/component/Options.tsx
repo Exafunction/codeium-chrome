@@ -6,7 +6,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Alert, Button, Link, Snackbar, TextField, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -16,6 +16,7 @@ import {
   getStorageItem,
   setStorageItem,
 } from '../storage';
+import { PUBLIC_WEBSITE } from '../urls';
 
 const EditableList = () => {
   const [text, setText] = useState('');
@@ -159,6 +160,13 @@ const Options = () => {
       console.error(e);
     });
   }, []);
+  // TODO(prem): Deduplicate with serviceWorker.ts/storage.ts.
+  const resolvedPortalUrl = useMemo(() => {
+    if (portalUrlText !== '' || CODEIUM_ENTERPRISE) {
+      return portalUrlText;
+    }
+    return PUBLIC_WEBSITE;
+  }, []);
   return (
     <Box sx={{ width: '100%', maxWidth: 400, bgcolor: 'background.paper' }}>
       {!CODEIUM_ENTERPRISE && (
@@ -174,7 +182,7 @@ const Options = () => {
               }}
             />{' '}
             Edit telemetry settings at the{' '}
-            <Link href="https://codeium.com/profile" target="_blank">
+            <Link href={`${resolvedPortalUrl}/profile`} target="_blank">
               Codeium website
               <OpenInNewIcon
                 fontSize="small"

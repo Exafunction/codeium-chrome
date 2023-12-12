@@ -1,5 +1,7 @@
 import { ValuesType } from 'utility-types';
 
+import { PUBLIC_WEBSITE } from './urls';
+
 export interface Storage {
   user?: {
     apiKey?: string;
@@ -136,6 +138,7 @@ export async function getGeneralPortalUrl(): Promise<string | undefined> {
 
 // Note that this gets you the profile URL given the current portal URL, not the
 // specific profile URL of the logged in account.
+// TODO(prem): Deduplicate with Options.tsx/serviceWorker.ts.
 export async function getGeneralProfileUrl(): Promise<string | undefined> {
   const portalUrl = await (async (): Promise<string | undefined> => {
     const url = await getGeneralPortalUrl();
@@ -143,7 +146,7 @@ export async function getGeneralProfileUrl(): Promise<string | undefined> {
       if (CODEIUM_ENTERPRISE) {
         return undefined;
       }
-      return 'https://www.codeium.com';
+      return PUBLIC_WEBSITE;
     }
     return url;
   })();
