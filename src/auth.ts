@@ -27,15 +27,14 @@ export async function openAuthTab(): Promise<void> {
 }
 
 async function getApiServerUrl(): Promise<string | undefined> {
-  const user = await getStorageItem('user');
-  const userPortalUrl = user?.userPortalUrl;
-  if (userPortalUrl === undefined || userPortalUrl === '') {
+  const portalUrl = (await getStorageItem('portalUrl'))?.trim();
+  if (portalUrl === undefined || portalUrl === '') {
     if (CODEIUM_ENTERPRISE) {
       return undefined;
     }
     return PUBLIC_API_SERVER;
   }
-  return `${userPortalUrl}/_route/api_server`;
+  return `${portalUrl.replace(/\/$/, '')}/_route/api_server`;
 }
 
 // Runs in service worker.
