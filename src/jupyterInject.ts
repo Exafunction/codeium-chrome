@@ -10,6 +10,16 @@ declare class Cell {
   cell_type: 'raw' | 'markdown' | 'code';
   cell_id: string;
   handle_codemirror_keyevent(this: Cell, editor: CodeMirror.Editor, event: KeyboardEvent): void;
+  output_area: {
+    outputs: {
+      // Currently, we only look at execute_result
+      output_type: 'execute_result' | 'error' | 'stream' | 'display_data';
+      name?: string;
+      data: {
+        'text/plain': string;
+      };
+    }[];
+  };
 }
 
 declare class CodeCell extends Cell {
@@ -76,7 +86,29 @@ class JupyterState {
               return;
             }
           }
-          const textModels = this.notebook.get_cells().map((cell) => cell.code_mirror.getDoc());
+          const textModels = [];
+
+          const editableCells = [...this.notebook.get_cells()];
+          for (const cell of editableCells) {
+            if (cell.code_mirror.getDoc() === doc) {
+              // TODO: make this keep track of the current cell's output.
+              textModels.push(doc);
+            } else {
+              const docCopy = cell.code_mirror.getDoc().copy(false);
+              let docText = docCopy.getValue();
+              if (cell.output_area.outputs.length > 0) {
+                const output = cell.output_area.outputs[0];
+                if (
+                  output.output_type === 'execute_result' &&
+                  output.data['text/plain'] !== undefined
+                ) {
+                  docText += '\nOUTPUT:\n' + output.data['text/plain'];
+                  docCopy.setValue(docText);
+                }
+              }
+              textModels.push(docCopy);
+            }
+          }
 
           const url = window.location.href;
           // URLs are usually of the form, http://localhost:XXXX/notebooks/path/to/notebook.ipynb
