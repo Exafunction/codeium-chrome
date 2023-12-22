@@ -74,7 +74,10 @@ const FILENAME_MAP = new Map<RegExp, Language>([
 ]);
 
 function getMode(doc: CodeMirror.Doc): { name: string } {
-  return doc.getMode() as { name: string };
+  if (doc.getMode() !== undefined) {
+    return doc.getMode() as { name: string };
+  }
+  return doc.modeOption as { name: string };
 }
 
 // Note that this cannot be mapped directly into the Language enum.

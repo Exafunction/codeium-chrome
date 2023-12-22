@@ -29,6 +29,22 @@ declare global {
             source: string;
           };
           singleDocument: { models: readonly monaco.editor.ITextModel[] };
+          cells: {
+            outputs: {
+              currentOutput?: {
+                outputItems: {
+                  data: {
+                    // There may be other fields as well
+                    'text/plain'?: string[];
+                    'text/html'?: string[];
+                  };
+                  output_type: string;
+                }[];
+              };
+            };
+            type: 'code' | 'text';
+            textModel: monaco.editor.ITextModel;
+          }[];
         };
       };
     };
@@ -341,6 +357,40 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
           },
         });
       }
+    }
+    if (this.monacoSite === OMonacoSite.COLAB) {
+      // We manually populate the cell outputs in colab, as they are not available in the monaco editor objects.
+      const cells = window.colab?.global.notebookModel.cells;
+      const rawTexts = [];
+      const textToLanguageMap = new Map<string, Language>();
+      for (const cell of cells ?? []) {
+        let text = cell.textModel.getValue();
+        if (cell.type === 'code') {
+          if (cell.outputs.currentOutput !== undefined) {
+            const data = cell.outputs.currentOutput.outputItems[0].data;
+            if (data['text/plain'] !== undefined) {
+              text = text + '\nOUTPUT:\n' + data['text/plain'].join();
+            } else if (data['text/html'] !== undefined) {
+              text = text + '\nOUTPUT:\n' + data['text/html'].join();
+            }
+          }
+          textToLanguageMap.set(text, getLanguage(getEditorLanguage(cell.textModel)));
+        }
+        rawTexts.push(text);
+      }
+      const valueAndStartOffset = getValueAndStartOffset(this.monacoSite, model);
+      return computeTextAndOffsets({
+        textModels: rawTexts.map((m) => getValueAndStartOffset(this.monacoSite, m).value),
+        currentTextModel: valueAndStartOffset.value,
+        utf16CodeUnitOffset: model.getOffsetAt(position) - valueAndStartOffset.utf16Offset,
+        getText: (text) => text,
+        getLanguage: (model) => {
+          return (
+            textToLanguageMap.get(getValueAndStartOffset(this.monacoSite, model).value) ??
+            Language.UNSPECIFIED
+          );
+        },
+      });
     }
     return computeTextAndOffsets({
       textModels: this.textModels(model),
