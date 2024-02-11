@@ -75,8 +75,13 @@ const addMonacoInject = () =>
           }
         }
 
+        // even if the monaco instance can't be registered with the completion provider,
+        // please still set _codeium_monaco, or _codeium_monaco.languages will cause an error
+
+        this._codeium_monaco = _monaco;
+
         const completionProvider = new MonacoCompletionProvider(extensionId, injectMonaco);
-        if (!_monaco.languages.registerInlineCompletionsProvider) {
+        if (!_monaco?.languages?.registerInlineCompletionsProvider) {
           return;
         }
         setTimeout(() => {
@@ -98,7 +103,6 @@ const addMonacoInject = () =>
           });
           console.log('Activated Codeium: Monaco');
         });
-        this._codeium_monaco = _monaco;
       },
     },
   });
