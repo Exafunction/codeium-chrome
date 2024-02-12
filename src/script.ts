@@ -74,9 +74,9 @@ const addMonacoInject = () =>
             break;
           }
         }
-
+        this._codeium_monaco = _monaco;
         const completionProvider = new MonacoCompletionProvider(extensionId, injectMonaco);
-        if (!_monaco.languages.registerInlineCompletionsProvider) {
+        if (!_monaco?.languages?.registerInlineCompletionsProvider) {
           return;
         }
         setTimeout(() => {
@@ -98,7 +98,6 @@ const addMonacoInject = () =>
           });
           console.log('Activated Codeium: Monaco');
         });
-        this._codeium_monaco = _monaco;
       },
     },
   });
