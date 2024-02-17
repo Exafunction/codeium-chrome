@@ -58,3 +58,26 @@ export async function unhealthy(message: string): Promise<void> {
     setStorageItem('lastError', { message: message }),
   ]);
 }
+
+export async function update_tab_icon(tabId: number | undefined, status: string): Promise<void> {
+  const iconType = status === 'active' ? 'codeium_square_logo' : 'codeium_square_inactive';
+  const text = status === 'active' ? '' : status;
+
+  await Promise.all([
+    chrome.action.setBadgeText({
+      tabId: tabId,
+      text,
+    }),
+    chrome.action.setIcon({
+      tabId: tabId,
+      path: {
+        16: `/icons/16/${iconType}.png`,
+        32: `/icons/32/${iconType}.png`,
+        48: `/icons/48/${iconType}.png`,
+        128: `/icons/128/${iconType}.png`,
+      },
+    }),
+    chrome.action.setTitle({ title: `Codeium ${status}`, tabId: tabId }),
+    clearLastError(),
+  ]);
+}

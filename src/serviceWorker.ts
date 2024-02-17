@@ -7,7 +7,7 @@ import {
   LanguageServerServiceWorkerClient,
   LanguageServerWorkerRequest,
 } from './common';
-import { loggedIn, loggedOut, unhealthy } from './shared';
+import { loggedIn, loggedOut, unhealthy, update_tab_icon } from './shared';
 import {
   defaultAllowlist,
   getGeneralPortalUrl,
@@ -114,6 +114,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     // No response needed.
     return;
   }
+  if (message.type == 'icon_status') {
+    update_tab_icon(sender.tab?.id, message.status).catch((e) => {
+      console.error(e);
+    });
+    // No response needed.
+    return;
+  }
   if (typeof message.token !== 'string' || typeof message.state !== 'string') {
     console.log('Unexpected message:', message);
     return;
@@ -125,6 +132,23 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       await login(typedMessage.token);
     }
   })().catch((e) => {
+    console.error(e);
+  });
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'toggle_feature',
+    title: 'Enable/Disable Codeium on Current Tab',
+    contexts: ['all'],
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (tab === undefined || tab.id === undefined || info.menuItemId !== 'toggle_feature') {
+    return;
+  }
+  chrome.tabs.sendMessage(tab.id, { type: 'codeium_toggle' }).catch((e) => {
     console.error(e);
   });
 });

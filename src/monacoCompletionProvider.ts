@@ -406,6 +406,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     model: monaco.editor.ITextModel,
     position: monaco.Position
   ): Promise<monaco.languages.InlineCompletions | undefined> {
+    if (!window.codeium_enabled) return;
     const clientSettings = await this.client.clientSettingsPoller.clientSettings;
     if (clientSettings.apiKey === undefined) {
       return;
@@ -454,6 +455,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
       )
       .filter((item): item is monaco.languages.InlineCompletion => item !== undefined);
     void chrome.runtime.sendMessage(this.extensionId, { type: 'success' });
+    console.log(items);
     return { items };
   }
 
