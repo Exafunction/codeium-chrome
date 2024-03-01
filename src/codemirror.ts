@@ -78,7 +78,6 @@ export class CodeMirrorManager {
     doc: CodeMirror.Doc;
     start: CodeMirror.Position;
     end: CodeMirror.Position;
-    apiKey: string;
     docState: string;
   };
 
@@ -113,11 +112,6 @@ export class CodeMirrorManager {
     relativePath: string | undefined,
     createDisposables: (() => IDisposable[]) | undefined
   ): Promise<void> {
-    const clientSettings = await this.client.clientSettingsPoller.clientSettings;
-    if (clientSettings.apiKey === undefined) {
-      return;
-    }
-    const apiKey = clientSettings.apiKey;
     const cursor = currentTextModel.getCursor();
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = computeTextAndOffsetsForCodeMirror(
       textModels,
@@ -125,7 +119,7 @@ export class CodeMirrorManager {
     );
     const numUtf8Bytes = additionalUtf8ByteOffset + utf8ByteOffset;
     const request = new GetCompletionsRequest({
-      metadata: this.client.getMetadata(this.ideInfo, apiKey),
+      metadata: this.client.getMetadata(this.ideInfo),
       document: {
         text,
         editorLanguage: editorLanguage(currentTextModel),
@@ -137,7 +131,6 @@ export class CodeMirrorManager {
         relativePath: relativePath,
       },
       editorOptions,
-      modelName: clientSettings.defaultModel,
       experimentConfig: {
         forceEnableExperiments: [ExperimentKey.JUPYTER_FORMAT],
       },
@@ -165,7 +158,6 @@ export class CodeMirrorManager {
       currentTextModel,
       completionItem,
       additionalUtf8ByteOffset,
-      apiKey,
       createDisposables ? createDisposables : () => []
     );
   }
@@ -195,7 +187,6 @@ export class CodeMirrorManager {
     doc: CodeMirror.Doc,
     completionItem: CompletionItem,
     additionalUtf8ByteOffset: number,
-    apiKey: string,
     createDisposables: () => IDisposable[]
   ): void {
     this.clearCompletion('about to render new completions');
@@ -211,7 +202,6 @@ export class CodeMirrorManager {
       doc,
       start: doc.posFromIndex(numUtf8BytesToNumCodeUnits(doc.getValue(), startOffsetUtf8Bytes)),
       end: doc.posFromIndex(numUtf8BytesToNumCodeUnits(doc.getValue(), endOffsetUtf8Bytes)),
-      apiKey,
       docState: doc.getValue(),
     };
     const cursor = doc.getCursor();
@@ -302,11 +292,7 @@ export class CodeMirrorManager {
         Number(completion.completionItem.suffix.deltaCursorOffset);
       doc.setCursor(doc.posFromIndex(newOffset));
     }
-    this.client.acceptedLastCompletion(
-      this.ideInfo,
-      completion.apiKey,
-      completionProto.completionId
-    );
+    this.client.acceptedLastCompletion(this.ideInfo, completionProto.completionId);
     return true;
   }
 

@@ -2,17 +2,16 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { registerUser } from './auth';
 import {
-  ClientSettings,
   GetCompletionsResponseMessage,
   LanguageServerServiceWorkerClient,
   LanguageServerWorkerRequest,
 } from './common';
 import { loggedIn, loggedOut, unhealthy } from './shared';
 import {
+  computeAllowlist,
   defaultAllowlist,
   getGeneralPortalUrl,
   getStorageItem,
-  getStorageItems,
   initializeStorageWithDefaults,
   setStorageItem,
 } from './storage';
@@ -66,35 +65,21 @@ chrome.runtime.onInstalled.addListener(async () => {
 //  - request for api key
 //  - set icon and error message
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  if (message.type === 'user') {
+  if (message.type === 'allowed') {
     (async () => {
-      const user = await getStorageItem('user');
-      sendResponse(user);
-      if (user?.apiKey === undefined) {
-        await loggedOut();
+      if (sender.url === undefined) {
+        sendResponse(false);
+        return;
       }
-    })().catch((e) => {
-      console.error(e);
-    });
-    return true;
-  }
-  if (message.type === 'clientSettings') {
-    (async () => {
-      const storageItems = await getStorageItems(['user', 'enterpriseDefaultModel']);
-      const clientSettings: ClientSettings = {
-        apiKey: storageItems.user?.apiKey,
-        defaultModel: storageItems.enterpriseDefaultModel,
-      };
-      sendResponse(clientSettings);
-    })().catch((e) => {
-      console.error(e);
-    });
-    return true;
-  }
-  if (message.type === 'allowlist') {
-    (async () => {
       const allowlist = await getStorageItem('allowlist');
-      sendResponse(allowlist);
+      for (const addr of computeAllowlist(allowlist)) {
+        const host = new RegExp(addr);
+        if (host.test(sender.url)) {
+          sendResponse(true);
+          return;
+        }
+      }
+      sendResponse(false);
     })().catch((e) => {
       console.error(e);
     });
