@@ -113,6 +113,9 @@ export class CodeMirrorManager {
     relativePath: string | undefined,
     createDisposables: (() => IDisposable[]) | undefined
   ): Promise<void> {
+    if (!window.codeium_enabled) {
+      return;
+    }
     const clientSettings = await this.client.clientSettingsPoller.clientSettings;
     if (clientSettings.apiKey === undefined) {
       return;

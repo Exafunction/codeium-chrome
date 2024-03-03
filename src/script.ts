@@ -27,8 +27,25 @@ async function getAllowlist(extensionId: string): Promise<Storage['allowlist']> 
   return allowlist;
 }
 
+// chrome.runtime.onMessage.addListener((message) => {
+//   console.log('message', message);
+// });
+
+window.addEventListener('CodeiumEvent', (event) => {
+  const enabled = (event as CustomEvent).detail.enabled;
+  window.codeium_enabled = enabled;
+  console.log('CodeiumEvent', enabled);
+});
+
 // Clear any bad state from another tab.
-void chrome.runtime.sendMessage(extensionId, { type: 'success' });
+// void chrome.runtime.sendMessage(extensionId, { type: 'success' });
+function update_icon_status(extensionId: string, status: 'off' | 'idle' | 'active') {
+  chrome.runtime.sendMessage(extensionId, { type: 'icon_status', status }).catch((e) => {
+    console.error(e);
+  });
+}
+
+update_icon_status(extensionId, 'idle');
 
 const SUPPORTED_MONACO_SITES = new Map<RegExp, MonacoSite>([
   [/https:\/\/colab.research\.google\.com\/.*/, OMonacoSite.COLAB],
@@ -42,8 +59,40 @@ declare global {
   interface Window {
     _monaco?: Monaco;
     _MonacoEnvironment?: monaco.Environment;
+    _codeium_enabled?: boolean;
+    _codeium_activated?: boolean;
+    codeium_enabled?: boolean;
+    codeium_activated?: boolean;
   }
 }
+
+Object.defineProperties(window, {
+  codeium_enabled: {
+    get() {
+      return this._codeium_enabled ?? true;
+    },
+    set(enabled: boolean) {
+      this._codeium_enabled = enabled;
+
+      if (enabled) {
+        update_icon_status(extensionId, this.codeium_activated ? 'active' : 'idle');
+      } else {
+        update_icon_status(extensionId, 'off');
+      }
+    },
+  },
+  codeium_activated: {
+    get() {
+      return this._codeium_activated ?? false;
+    },
+    set(activated: boolean) {
+      this._codeium_activated = activated;
+      if (this.codeium_enabled) {
+        update_icon_status(extensionId, activated ? 'active' : 'idle');
+      }
+    },
+  },
+});
 
 // Intercept creation of monaco so we don't have to worry about timing the injection.
 const addMonacoInject = () =>
@@ -121,6 +170,7 @@ if (jupyterConfigDataElement !== null) {
         _jupyterapp.activatePlugin(p.id).then(
           () => {
             console.log('Activated Codeium: Jupyter 3.x');
+            window.codeium_activated = true;
           },
           (e) => {
             console.error(e);
@@ -146,6 +196,7 @@ if (jupyterConfigDataElement !== null) {
         _jupyterlab.activatePlugin(p.id).then(
           () => {
             console.log('Activated Codeium: Jupyter 2.x');
+            window.codeium_activated = true;
           },
           (e) => {
             console.error(e);
@@ -182,6 +233,7 @@ const addCodeMirror5GlobalInject = () =>
         injectCodeMirror = true;
         const jupyterState = jupyterInject(extensionId, this.Jupyter);
         addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
+        window.codeium_activated = true;
         console.log('Activated Codeium');
       } else {
         let multiplayer = false;
@@ -198,6 +250,7 @@ const addCodeMirror5GlobalInject = () =>
         }
         if (injectCodeMirror) {
           new CodeMirrorState(extensionId, cm as CodeMirror, multiplayer);
+          window.codeium_activated = true;
           console.log('Activated Codeium');
         }
       }
@@ -221,6 +274,7 @@ const addCodeMirror5LocalInject = () => {
       clearInterval(f);
       return;
     }
+    if (!window.codeium_enabled) return;
     let notebook = false;
     for (const pattern of SUPPORTED_CODEMIRROR_NONGLOBAL_SITES) {
       if (pattern.pattern.test(window.location.href)) {
@@ -236,6 +290,9 @@ const addCodeMirror5LocalInject = () => {
       }
       const editor = maybeCodeMirror.CodeMirror;
       hook(editor);
+      if (!window.codeium_activated) {
+        window.codeium_activated = true;
+      }
       if (notebook) {
         docsByPosition.set(editor.getDoc(), (el as HTMLElement).getBoundingClientRect().top);
       }
