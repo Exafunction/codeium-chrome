@@ -27,7 +27,7 @@ export async function loggedOut(): Promise<void> {
 
 export async function loggedIn(): Promise<void> {
   await Promise.all([
-    chrome.action.setPopup({ popup: 'logged_in_popup.html' }),
+    chrome.action.setPopup({ popup: 'popup.html' }),
     chrome.action.setBadgeText({ text: '' }),
     chrome.action.setIcon({
       path: {
@@ -45,7 +45,7 @@ export async function loggedIn(): Promise<void> {
 export async function unhealthy(message: string): Promise<void> {
   // We don't set the badge text on purpose.
   await Promise.all([
-    chrome.action.setPopup({ popup: 'logged_in_popup.html' }),
+    chrome.action.setPopup({ popup: 'popup.html' }),
     chrome.action.setIcon({
       path: {
         16: '/icons/16/codeium_square_error.png',

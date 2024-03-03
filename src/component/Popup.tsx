@@ -47,7 +47,7 @@ const getCurrentUrl = async () => {
 const addToAllowlist = async (input: string) => {
   try {
     const item = new RegExp(input);
-    const allowlist = computeAllowlist(await getStorageItem('allowlist')) || [];
+    const allowlist = computeAllowlist(await getStorageItem('allowlist')) || undefined;
     for (const regex of allowlist) {
       const r = new RegExp(regex);
       if (r.source === item.source) {
@@ -59,7 +59,7 @@ const addToAllowlist = async (input: string) => {
     await setStorageItem('allowlist', { defaults: defaultAllowlist, current: allowlist });
     return 'success';
   } catch (e) {
-    return e?.message || 'Unknown error';
+    return (e as Error).message || 'Unknown error';
   }
 };
 
@@ -69,7 +69,7 @@ export const PopupPage = () => {
   const [open, setOpen] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [severity, setSeverity] = React.useState<'success' | 'error'>('success');
-  const [user, setUser] = React.useState(undefined);
+  const [user, setUser] = React.useState<any>();
   const [matched, setMatched] = React.useState(false);
   const [regexItem, setRegexItem] = React.useState('');
 
@@ -90,16 +90,18 @@ export const PopupPage = () => {
       setUser(u as any);
     });
     getCurrentUrl().then((tabURL: string | undefined) => {
+      const curURL: string = tabURL ?? '';
       getAllowlist().then((allowlist) => {
-        for (const regex of computeAllowlist(allowlist)) {
-          console.log(new RegExp(regex).test(tabURL));
-          if (new RegExp(regex).test(tabURL)) {
+        for (const regex of computeAllowlist(
+          allowlist as { defaults: string[]; current: string[] }
+        )) {
+          if (new RegExp(regex).test(curURL)) {
             setMatched(true);
             setRegexItem(regex);
             return;
           }
         }
-        setRegexItem(domainToRegex(tabURL ?? '').source);
+        setRegexItem(domainToRegex(curURL ?? '').source);
       });
     });
   }, []);
@@ -130,14 +132,14 @@ export const PopupPage = () => {
                 await chrome.tabs.create({ url: 'https://codeium.com/profile' });
               }
             }}
-            sx={{ display: (user as any)?.name ? 'flex' : 'none', float: 'right' }}
+            sx={{ display: user?.name ? 'flex' : 'none', float: 'right' }}
           >
             <AccountCircleIcon />
           </IconButton>
         </Box>
       </Toolbar>
       <Typography variant="body1" component={'span'}>
-        {user && user.name ? (
+        {user?.name ? (
           <Typography variant="body1" component="div">
             {`Welcome, ${user.name}`}
           </Typography>
@@ -148,7 +150,7 @@ export const PopupPage = () => {
         )}
       </Typography>
 
-      <Typography variant="button" component="div">
+      <Typography variant="caption" component="div" color={matched ? 'success' : 'error'}>
         {matched ? 'Current URL matches:' : 'Adding current URL to whitelist:'}
       </Typography>
 
@@ -175,11 +177,11 @@ export const PopupPage = () => {
       >
         <Button
           fullWidth
-          startIcon={user && user.name ? <LogoutIcon /> : <LoginIcon />}
+          startIcon={user?.name ? <LogoutIcon /> : <LoginIcon />}
           variant="outlined"
           color="primary"
           onClick={async () => {
-            if (user && user.name) {
+            if (user?.name) {
               await logout();
             } else {
               await openAuthTab();
@@ -189,7 +191,7 @@ export const PopupPage = () => {
             }
           }}
         >
-          {user && user.name ? 'Logout' : 'Login'}
+          {user?.name ? 'Logout' : 'Login'}
         </Button>
 
         <Button
