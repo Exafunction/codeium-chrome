@@ -1,32 +1,23 @@
-import React, { useEffect } from 'react';
-
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {
   Alert,
+  Box,
   Button,
-  Link,
+  IconButton,
   Snackbar,
   TextField,
-  Typography,
-  IconButton,
   Toolbar,
-  Box,
+  Typography,
 } from '@mui/material';
+import React, { useEffect } from 'react';
 
 import { openAuthTab } from '../auth';
 import { loggedOut } from '../shared';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LoginIcon from '@mui/icons-material/Login';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-
-import {
-  computeAllowlist,
-  defaultAllowlist,
-  getGeneralProfileUrl,
-  getStorageItem,
-  setStorageItem,
-} from '../storage';
+import { computeAllowlist, defaultAllowlist, getStorageItem, setStorageItem } from '../storage';
 
 // Function to extract domain and convert it to a regex pattern
 function domainToRegex(url: string) {
@@ -59,11 +50,11 @@ const addToAllowlist = async (input: string) => {
     await setStorageItem('allowlist', { defaults: defaultAllowlist, current: allowlist });
     return 'success';
   } catch (e) {
-    return (e as Error).message || 'Unknown error';
+    return (e as Error).message ?? 'Unknown error';
   }
 };
 
-const getAllowlist = async () => (await getStorageItem('allowlist')) || [];
+const getAllowlist = async () => (await getStorageItem('allowlist')) ?? [];
 
 export const PopupPage = () => {
   const [open, setOpen] = React.useState(false);
@@ -86,24 +77,30 @@ export const PopupPage = () => {
   };
 
   useEffect(() => {
-    getStorageItem('user').then((u) => {
-      setUser(u as any);
-    });
-    getCurrentUrl().then((tabURL: string | undefined) => {
-      const curURL: string = tabURL ?? '';
-      getAllowlist().then((allowlist) => {
-        for (const regex of computeAllowlist(
-          allowlist as { defaults: string[]; current: string[] }
-        )) {
-          if (new RegExp(regex).test(curURL)) {
-            setMatched(true);
-            setRegexItem(regex);
-            return;
-          }
-        }
-        setRegexItem(domainToRegex(curURL ?? '').source);
-      });
-    });
+    getStorageItem('user')
+      .then((u) => {
+        setUser(u as any);
+      })
+      .catch(console.log);
+    getCurrentUrl()
+      .then((tabURL: string | undefined) => {
+        const curURL: string = tabURL ?? '';
+        getAllowlist()
+          .then((allowlist) => {
+            for (const regex of computeAllowlist(
+              allowlist as { defaults: string[]; current: string[] }
+            )) {
+              if (new RegExp(regex).test(curURL)) {
+                setMatched(true);
+                setRegexItem(regex);
+                return;
+              }
+            }
+            setRegexItem(domainToRegex(curURL ?? '').source);
+          })
+          .catch(console.log);
+      })
+      .catch(console.log);
   }, []);
 
   const logout = async () => {
@@ -185,9 +182,11 @@ export const PopupPage = () => {
               await logout();
             } else {
               await openAuthTab();
-              getStorageItem('user').then((u) => {
-                setUser(u as any);
-              });
+              getStorageItem('user')
+                .then((u) => {
+                  setUser(u as any);
+                })
+                .catch(console.log);
             }
           }}
         >
