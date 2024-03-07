@@ -6,7 +6,6 @@ import { CodeMirrorState } from './codemirrorInject';
 import { inject as jupyterInject } from './jupyterInject';
 import { getPlugin } from './jupyterlabPlugin';
 import { MonacoCompletionProvider, MonacoSite, OMonacoSite } from './monacoCompletionProvider';
-import { Storage, computeAllowlist } from './storage';
 
 declare type Monaco = typeof import('monaco-editor');
 declare type CodeMirror = typeof import('codemirror');
@@ -14,17 +13,13 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getAllowlist(extensionId: string): Promise<Storage['allowlist']> {
-  const allowlist = await new Promise<Storage['allowlist']>((resolve) => {
-    chrome.runtime.sendMessage(
-      extensionId,
-      { type: 'allowlist' },
-      (response: Storage['allowlist']) => {
-        resolve(response);
-      }
-    );
+async function getAllowed(extensionId: string): Promise<boolean> {
+  const allowed = await new Promise<boolean>((resolve) => {
+    chrome.runtime.sendMessage(extensionId, { type: 'allowed' }, (response: boolean) => {
+      resolve(response);
+    });
   });
-  return allowlist;
+  return allowed;
 }
 
 // Clear any bad state from another tab.
@@ -88,7 +83,7 @@ const addMonacoInject = () =>
             'codeium.acceptCompletion',
             (_: unknown, apiKey: string, completionId: string, callback?: () => void) => {
               callback?.();
-              completionProvider.acceptedLastCompletion(apiKey, completionId).catch((e) => {
+              completionProvider.acceptedLastCompletion(completionId).catch((e) => {
                 console.error(e);
               });
             }
@@ -247,8 +242,8 @@ const addCodeMirror5LocalInject = () => {
   }, 500);
 };
 
-getAllowlist(extensionId).then(
-  (allowlist) => {
+getAllowed(extensionId).then(
+  (allowed) => {
     const validInjectTypes = ['monaco', 'codemirror5', 'none'];
     const metaTag = document.querySelector('meta[name="codeium:type"]');
     const injectionTypes =
@@ -274,15 +269,12 @@ getAllowlist(extensionId).then(
 
     if (injectionTypes.length === 0) {
       // if no meta tag is found, check the allowlist
-      for (const addr of computeAllowlist(allowlist)) {
-        const host = new RegExp(addr);
-        if (host.test(window.location.href)) {
-          // the url matches the allowlist
-          addMonacoInject();
-          addCodeMirror5GlobalInject();
-          addCodeMirror5LocalInject();
-          return;
-        }
+      if (allowed) {
+        // the url matches the allowlist
+        addMonacoInject();
+        addCodeMirror5GlobalInject();
+        addCodeMirror5LocalInject();
+        return;
       }
     }
   },

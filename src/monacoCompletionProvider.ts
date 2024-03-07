@@ -131,7 +131,6 @@ function createInlineCompletionItem(
   completionItem: CompletionItem,
   document: monaco.editor.ITextModel,
   additionalUtf8ByteOffset: number,
-  apiKey: string,
   editor?: monaco.editor.ICodeEditor
 ): monaco.languages.InlineCompletion | undefined {
   if (!completionItem.completion || !completionItem.range) {
@@ -185,7 +184,7 @@ function createInlineCompletionItem(
     command: {
       id: 'codeium.acceptCompletion',
       title: 'Accept Completion',
-      arguments: [apiKey, completionItem.completion.completionId, callback],
+      arguments: [completionItem.completion.completionId, callback],
     },
   };
   return inlineCompletionItem;
@@ -406,19 +405,13 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     model: monaco.editor.ITextModel,
     position: monaco.Position
   ): Promise<monaco.languages.InlineCompletions | undefined> {
-    const clientSettings = await this.client.clientSettingsPoller.clientSettings;
-    if (clientSettings.apiKey === undefined) {
-      return;
-    }
-    const apiKey = clientSettings.apiKey;
-
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = this.computeTextAndOffsets(
       model,
       position
     );
     const numUtf8Bytes = additionalUtf8ByteOffset + utf8ByteOffset;
     const request = new GetCompletionsRequest({
-      metadata: this.client.getMetadata(this.getIdeInfo(), apiKey),
+      metadata: this.client.getMetadata(this.getIdeInfo()),
       document: {
         text: text,
         editorLanguage: getEditorLanguage(model),
@@ -432,7 +425,6 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         tabSize: BigInt(model.getOptions().tabSize),
         insertSpaces: model.getOptions().insertSpaces,
       },
-      modelName: clientSettings.defaultModel,
       experimentConfig: {
         forceEnableExperiments: [ExperimentKey.JUPYTER_FORMAT],
       },
@@ -448,7 +440,6 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
           completionItem,
           model,
           additionalUtf8ByteOffset,
-          apiKey,
           this.modelUriToEditor.get(model.uri.toString())
         )
       )
@@ -489,8 +480,8 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     }
   }
 
-  async acceptedLastCompletion(apiKey: string, completionId: string): Promise<void> {
-    await this.client.acceptedLastCompletion(this.getIdeInfo(), apiKey, completionId);
+  async acceptedLastCompletion(completionId: string): Promise<void> {
+    await this.client.acceptedLastCompletion(this.getIdeInfo(), completionId);
   }
 }
 

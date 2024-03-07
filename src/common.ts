@@ -3,6 +3,7 @@ import { Code, ConnectError, PromiseClient, createPromiseClient } from '@connect
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { v4 as uuidv4 } from 'uuid';
 
+import { getStorageItems } from './storage';
 import { Metadata } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import { LanguageServerService } from '../proto/exa/language_server_pb/language_server_connect';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.6.13';
+const EXTENSION_VERSION = '1.8.0';
 
 export const CODEIUM_DEBUG = false;
 
@@ -21,16 +22,12 @@ export interface ClientSettings {
   defaultModel?: string;
 }
 
-async function getClientSettings(extensionId: string): Promise<ClientSettings> {
-  return await new Promise<ClientSettings>((resolve) => {
-    chrome.runtime.sendMessage(
-      extensionId,
-      { type: 'clientSettings' },
-      (response: ClientSettings) => {
-        resolve(response);
-      }
-    );
-  });
+async function getClientSettings(): Promise<ClientSettings> {
+  const storageItems = await getStorageItems(['user', 'enterpriseDefaultModel']);
+  return {
+    apiKey: storageItems.user?.apiKey,
+    defaultModel: storageItems.enterpriseDefaultModel,
+  };
 }
 
 function languageServerClient(baseUrl: string): PromiseClient<typeof LanguageServerService> {
@@ -45,10 +42,10 @@ class ClientSettingsPoller {
   // This is initialized to a promise at construction, then updated to a
   // non-promise later.
   clientSettings: Promise<ClientSettings> | ClientSettings;
-  constructor(extensionId: string) {
-    this.clientSettings = getClientSettings(extensionId);
+  constructor() {
+    this.clientSettings = getClientSettings();
     setInterval(async () => {
-      this.clientSettings = await getClientSettings(extensionId);
+      this.clientSettings = await getClientSettings();
     }, 500);
   }
 }
@@ -62,6 +59,7 @@ export class LanguageServerServiceWorkerClient {
   // Note that the URL won't refresh post-initialization.
   client: Promise<PromiseClient<typeof LanguageServerService> | undefined>;
   private abortController?: AbortController;
+  clientSettingsPoller: ClientSettingsPoller;
 
   constructor(baseUrlPromise: Promise<string | undefined>, private readonly sessionId: string) {
     this.client = (async (): Promise<PromiseClient<typeof LanguageServerService> | undefined> => {
@@ -71,6 +69,7 @@ export class LanguageServerServiceWorkerClient {
       }
       return languageServerClient(baseUrl);
     })();
+    this.clientSettingsPoller = new ClientSettingsPoller();
   }
 
   getHeaders(apiKey: string | undefined): Record<string, string> {
@@ -86,6 +85,12 @@ export class LanguageServerServiceWorkerClient {
   ): Promise<GetCompletionsResponse | undefined> {
     this.abortController?.abort();
     this.abortController = new AbortController();
+    const clientSettings = await this.clientSettingsPoller.clientSettings;
+    if (clientSettings.apiKey === undefined || request.metadata === undefined) {
+      return;
+    }
+    request.metadata.apiKey = clientSettings.apiKey;
+    request.modelName = clientSettings.defaultModel ?? '';
     const signal = this.abortController.signal;
     const getCompletionsPromise = (await this.client)?.getCompletions(request, {
       signal,
@@ -119,7 +124,12 @@ export class LanguageServerServiceWorkerClient {
   async acceptedLastCompletion(
     acceptCompletionRequest: PartialMessage<AcceptCompletionRequest>
   ): Promise<void> {
+    if (acceptCompletionRequest.metadata === undefined) {
+      return;
+    }
     try {
+      const clientSettings = await this.clientSettingsPoller.clientSettings;
+      acceptCompletionRequest.metadata.apiKey = clientSettings.apiKey;
       await (
         await this.client
       )?.acceptCompletion(acceptCompletionRequest, {
@@ -159,11 +169,9 @@ export class LanguageServerClient {
   private port: chrome.runtime.Port;
   private requestId = 0;
   private promiseMap = new Map<number, (res: GetCompletionsResponse | undefined) => void>();
-  clientSettingsPoller: ClientSettingsPoller;
 
   constructor(readonly extensionId: string) {
     this.port = this.createPort();
-    this.clientSettingsPoller = new ClientSettingsPoller(extensionId);
   }
 
   createPort(): chrome.runtime.Port {
@@ -184,13 +192,12 @@ export class LanguageServerClient {
     return port;
   }
 
-  getMetadata(ideInfo: IdeInfo, apiKey: string): Metadata {
+  getMetadata(ideInfo: IdeInfo): Metadata {
     return new Metadata({
       ideName: ideInfo.ideName,
       ideVersion: ideInfo.ideVersion,
       extensionName: EXTENSION_NAME,
       extensionVersion: EXTENSION_VERSION,
-      apiKey,
       locale: navigator.language,
       sessionId: this.sessionId,
       requestId: BigInt(++this.requestId),
@@ -215,9 +222,9 @@ export class LanguageServerClient {
     return prom;
   }
 
-  acceptedLastCompletion(ideInfo: IdeInfo, apiKey: string, completionId: string): void {
+  acceptedLastCompletion(ideInfo: IdeInfo, completionId: string): void {
     const request = new AcceptCompletionRequest({
-      metadata: this.getMetadata(ideInfo, apiKey),
+      metadata: this.getMetadata(ideInfo),
       completionId,
     });
     const message: AcceptCompletionRequestMessage = {
