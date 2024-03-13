@@ -33,7 +33,7 @@ declare global {
             outputs: {
               currentOutput?: {
                 outputItems: {
-                  data: {
+                  data?: {
                     // There may be other fields as well
                     'text/plain'?: string[];
                     'text/html'?: string[];
@@ -365,12 +365,17 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
       for (const cell of cells ?? []) {
         let text = cell.textModel.getValue();
         if (cell.type === 'code') {
-          if (cell.outputs.currentOutput !== undefined) {
+          if (
+            cell.outputs.currentOutput !== undefined &&
+            cell.outputs.currentOutput.outputItems.length > 0
+          ) {
             const data = cell.outputs.currentOutput.outputItems[0].data;
-            if (data['text/plain'] !== undefined) {
-              text = text + '\nOUTPUT:\n' + data['text/plain'].join();
-            } else if (data['text/html'] !== undefined) {
-              text = text + '\nOUTPUT:\n' + data['text/html'].join();
+            if (data !== undefined) {
+              if (data['text/plain'] !== undefined) {
+                text = text + '\nOUTPUT:\n' + data['text/plain'].join();
+              } else if (data['text/html'] !== undefined) {
+                text = text + '\nOUTPUT:\n' + data['text/html'].join();
+              }
             }
           }
           textToLanguageMap.set(text, getLanguage(getEditorLanguage(cell.textModel)));

@@ -10,12 +10,12 @@ declare class Cell {
   cell_type: 'raw' | 'markdown' | 'code';
   cell_id: string;
   handle_codemirror_keyevent(this: Cell, editor: CodeMirror.Editor, event: KeyboardEvent): void;
-  output_area: {
+  output_area?: {
     outputs: {
       // Currently, we only look at execute_result
       output_type: 'execute_result' | 'error' | 'stream' | 'display_data';
       name?: string;
-      data: {
+      data?: {
         'text/plain': string;
       };
     }[];
@@ -96,10 +96,11 @@ class JupyterState {
             } else {
               const docCopy = cell.code_mirror.getDoc().copy(false);
               let docText = docCopy.getValue();
-              if (cell.output_area.outputs.length > 0) {
+              if (cell.output_area !== undefined && cell.output_area.outputs.length > 0) {
                 const output = cell.output_area.outputs[0];
                 if (
                   output.output_type === 'execute_result' &&
+                  output.data !== undefined &&
                   output.data['text/plain'] !== undefined
                 ) {
                   docText += '\nOUTPUT:\n' + output.data['text/plain'];
