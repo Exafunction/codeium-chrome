@@ -5,7 +5,7 @@ import { editorLanguage, language } from './codemirrorLanguages';
 import { CODEIUM_DEBUG, IdeInfo, LanguageServerClient } from './common';
 import { TextAndOffsets, computeTextAndOffsets } from './notebook';
 import { numUtf8BytesToNumCodeUnits } from './utf';
-import { EditorOptions, ExperimentKey } from '../proto/exa/codeium_common_pb/codeium_common_pb';
+import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import {
   CompletionItem,
   CompletionPartType,
@@ -131,9 +131,6 @@ export class CodeMirrorManager {
         relativePath: relativePath,
       },
       editorOptions,
-      experimentConfig: {
-        forceEnableExperiments: [ExperimentKey.JUPYTER_FORMAT],
-      },
     });
     const response = await this.client.getCompletions(request);
     if (response === undefined) {
