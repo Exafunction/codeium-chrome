@@ -1,6 +1,7 @@
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager } from './codemirror';
+import { JupyterNotebookKeyBindings } from './common';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 
 declare class Cell {
@@ -18,6 +19,7 @@ declare class Cell {
       data?: {
         'text/plain': string;
       };
+      text?: string;
     }[];
   };
 }
@@ -50,18 +52,26 @@ interface Jupyter {
 class JupyterState {
   jupyter: Jupyter;
   codeMirrorManager: CodeMirrorManager;
+  keybindings: JupyterNotebookKeyBindings;
 
-  constructor(extensionId: string, jupyter: Jupyter) {
+  constructor(extensionId: string, jupyter: Jupyter, keybindings: JupyterNotebookKeyBindings) {
     this.jupyter = jupyter;
     this.codeMirrorManager = new CodeMirrorManager(extensionId, {
       ideName: 'jupyter_notebook',
       ideVersion: jupyter.version,
     });
+    this.keybindings = keybindings;
   }
 
   patchCellKeyEvent() {
-    const beforeMainHandler = (doc: CodeMirror.Doc, event: KeyboardEvent) =>
-      this.codeMirrorManager.beforeMainKeyHandler(doc, event, { tab: true, escape: false });
+    const beforeMainHandler = (doc: CodeMirror.Doc, event: KeyboardEvent) => {
+      return this.codeMirrorManager.beforeMainKeyHandler(
+        doc,
+        event,
+        { tab: true, escape: false },
+        this.keybindings.accept
+      );
+    };
     const replaceOriginalHandler = (
       handler: (this: Cell, editor: CodeMirror.Editor, event: KeyboardEvent) => void
     ) => {
@@ -89,24 +99,44 @@ class JupyterState {
           const textModels = [];
 
           const editableCells = [...this.notebook.get_cells()];
+          let currentModelWithOutput;
           for (const cell of editableCells) {
+            let outputText = '';
+            if (cell.output_area !== undefined && cell.output_area.outputs.length > 0) {
+              const output = cell.output_area.outputs[0];
+              if (
+                output.output_type === 'execute_result' &&
+                output.data !== undefined &&
+                output.data['text/plain'] !== undefined
+              ) {
+                outputText = output.data['text/plain'];
+              } else if (
+                output.output_type === 'stream' &&
+                output.name === 'stdout' &&
+                output.text !== undefined
+              ) {
+                outputText = output.text;
+              }
+
+              const lines = outputText.split('\n');
+              if (lines.length > 10) {
+                lines.length = 10;
+                outputText = lines.join('\n');
+              }
+              if (outputText.length > 500) {
+                outputText = outputText.slice(0, 500);
+              }
+            }
+            outputText = outputText ? '\nOUTPUT:\n' + outputText : '';
             if (cell.code_mirror.getDoc() === doc) {
-              // TODO: make this keep track of the current cell's output.
               textModels.push(doc);
+              currentModelWithOutput = cell.code_mirror.getDoc().copy(false);
+              currentModelWithOutput.setValue(cell.get_text() + outputText);
             } else {
               const docCopy = cell.code_mirror.getDoc().copy(false);
               let docText = docCopy.getValue();
-              if (cell.output_area !== undefined && cell.output_area.outputs.length > 0) {
-                const output = cell.output_area.outputs[0];
-                if (
-                  output.output_type === 'execute_result' &&
-                  output.data !== undefined &&
-                  output.data['text/plain'] !== undefined
-                ) {
-                  docText += '\nOUTPUT:\n' + output.data['text/plain'];
-                  docCopy.setValue(docText);
-                }
-              }
+              docText += outputText;
+              docCopy.setValue(docText);
               textModels.push(docCopy);
             }
           }
@@ -120,6 +150,7 @@ class JupyterState {
           await codeMirrorManager.triggerCompletion(
             textModels,
             this.code_mirror.getDoc(),
+            currentModelWithOutput,
             new EditorOptions({
               tabSize: BigInt(editor.getOption('tabSize') ?? 4),
               insertSpaces: !(editor.getOption('indentWithTabs') ?? false),
@@ -154,8 +185,12 @@ class JupyterState {
   }
 }
 
-export function inject(extensionId: string, jupyter: Jupyter): JupyterState {
-  const jupyterState = new JupyterState(extensionId, jupyter);
+export function inject(
+  extensionId: string,
+  jupyter: Jupyter,
+  keybindings: JupyterNotebookKeyBindings
+): JupyterState {
+  const jupyterState = new JupyterState(extensionId, jupyter, keybindings);
   jupyterState.patchCellKeyEvent();
   jupyterState.patchShortcutManagerHandler();
   return jupyterState;

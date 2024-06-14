@@ -14,7 +14,7 @@ cd -- "$( dirname -- "${BASH_SOURCE[0]}" )"
 
 cd ../../.. && git clean -ffdx -e local.bazelrc && cd -
 pnpm install
-# If the first arg is public, use npm run build
+# If the first arg is public, use pnpm run build
 if [[ "$1" == "public" ]]; then
     pnpm run build
 else

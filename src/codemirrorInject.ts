@@ -69,6 +69,7 @@ export class CodeMirrorState {
         await this.codeMirrorManager.triggerCompletion(
           this.docs,
           editor.getDoc(),
+          undefined,
           new EditorOptions({
             tabSize: BigInt(editor.getOption('tabSize') ?? 4),
             insertSpaces: !(editor.getOption('indentWithTabs') ?? false),

@@ -9,10 +9,39 @@ import { type Widget } from '@lumino/widgets';
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager } from './codemirror';
+import type { JupyterLabKeyBindings } from './common';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 
 const COMMAND_ACCEPT = 'codeium:accept-completion';
 const COMMAND_DISMISS = 'codeium:dismiss-completion';
+
+declare class CellJSON {
+  cell_type: 'raw' | 'markdown' | 'code';
+  source: string;
+  outputs: {
+    // Currently, we only look at execute_result
+    output_type: 'execute_result' | 'error' | 'stream' | 'display_data';
+    name?: string;
+    data?: {
+      'text/html': string;
+      'text/plain': string;
+    };
+    text?: string;
+  }[];
+}
+
+async function getKeybindings(extensionId: string): Promise<JupyterLabKeyBindings> {
+  const allowed = await new Promise<JupyterLabKeyBindings>((resolve) => {
+    chrome.runtime.sendMessage(
+      extensionId,
+      { type: 'jupyterlab' },
+      (response: JupyterLabKeyBindings) => {
+        resolve(response);
+      }
+    );
+  });
+  return allowed;
+}
 
 class CodeiumPlugin {
   app: JupyterFrontEnd;
@@ -24,6 +53,7 @@ class CodeiumPlugin {
   nonNotebookWidget = new Set<string>();
 
   codeMirrorManager: CodeMirrorManager;
+  keybindings: Promise<JupyterLabKeyBindings>;
 
   constructor(
     readonly extensionId: string,
@@ -72,6 +102,7 @@ class CodeiumPlugin {
       this.nonNotebookWidget.add(widget.id);
       widget.disposed.connect(this.removeNonNotebookWidget, this);
     }, this);
+    this.keybindings = getKeybindings(extensionId);
   }
 
   removeNonNotebookWidget(w: Widget) {
@@ -94,6 +125,7 @@ class CodeiumPlugin {
     // We need to run the rest of the code after the normal DOM handler.
     // TODO(prem): Does this need debouncing?
     setTimeout(async () => {
+      const keybindings = await this.keybindings;
       if (!forceTriggerCompletion) {
         const newString = codeMirrorEditor.doc.getValue();
         if (newString === oldString) {
@@ -106,11 +138,57 @@ class CodeiumPlugin {
       const widget = isNotebook
         ? this.notebookTracker.currentWidget
         : this.editorTracker.currentWidget;
+      let currentTextModelWithOutput = undefined;
       if (isNotebook) {
         const cells = this.notebookTracker.currentWidget?.content.widgets;
         if (cells !== undefined) {
           for (const cell of cells) {
-            textModels.push((cell.editor as CodeMirrorEditor).doc);
+            const doc = (cell.editor as CodeMirrorEditor).doc;
+            const cellJSON = cell.model.toJSON() as CellJSON;
+            if (cellJSON.outputs !== undefined && cellJSON.outputs.length > 0) {
+              const isCurrentCell = cell === this.notebookTracker.currentWidget?.content.activeCell;
+              const cellText = cellJSON.source;
+              let outputText = '';
+
+              for (const output of cellJSON.outputs) {
+                if (output.output_type === 'execute_result' && output.data !== undefined) {
+                  const data = output.data;
+                  if (data['text/plain'] !== undefined) {
+                    outputText = output.data['text/plain'];
+                  } else if (data['text/html'] !== undefined) {
+                    outputText = output.data['text/html'];
+                  }
+                }
+                if (
+                  output.output_type === 'stream' &&
+                  output.name === 'stdout' &&
+                  output.text !== undefined
+                ) {
+                  outputText = output.text;
+                }
+              }
+
+              // Limit output text to 10 lines and 500 characters
+              // Add the OUTPUT: prefix if it exists
+              outputText = outputText
+                .split('\n')
+                .slice(0, 10)
+                .map((line) => line.slice(0, 500))
+                .join('\n');
+              outputText = outputText ? '\nOUTPUT:\n' + outputText : '';
+
+              const docCopy = doc.copy(false);
+              docCopy.setValue(cellText + outputText);
+
+              if (isCurrentCell) {
+                currentTextModelWithOutput = docCopy;
+                textModels.push(doc);
+              } else {
+                textModels.push(docCopy);
+              }
+            } else {
+              textModels.push(doc);
+            }
           }
         }
       }
@@ -119,23 +197,31 @@ class CodeiumPlugin {
       await this.codeMirrorManager.triggerCompletion(
         textModels,
         currentTextModel,
+        currentTextModelWithOutput,
         new EditorOptions({
           tabSize: BigInt(codeMirrorEditor.getOption('tabSize')),
           insertSpaces: codeMirrorEditor.getOption('insertSpaces'),
         }),
         context?.localPath,
-        () => [
-          this.app.commands.addKeyBinding({
-            command: COMMAND_ACCEPT,
-            keys: ['Tab'],
-            selector: '.CodeMirror',
-          }),
-          this.app.commands.addKeyBinding({
-            command: COMMAND_DISMISS,
-            keys: ['Escape'],
-            selector: '.CodeMirror',
-          }),
-        ]
+        () => {
+          const keybindingDisposables = [
+            this.app.commands.addKeyBinding({
+              command: COMMAND_ACCEPT,
+              keys: [keybindings.accept],
+              selector: '.CodeMirror',
+            }),
+          ];
+          if (!this.app.hasPlugin('@axlair/jupyterlab_vim')) {
+            keybindingDisposables.push(
+              this.app.commands.addKeyBinding({
+                command: COMMAND_DISMISS,
+                keys: [keybindings.dismiss],
+                selector: '.CodeMirror',
+              })
+            );
+          }
+          return keybindingDisposables;
+        }
       );
     });
     void chrome.runtime.sendMessage(this.extensionId, { type: 'success' });

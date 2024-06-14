@@ -148,6 +148,14 @@ const Options = () => {
   const [portalUrlText, setPortalUrlText] = useState('');
   const modelRef = createRef<HTMLInputElement>();
   const [modelText, setModelText] = useState('');
+  const jupyterlabKeybindingAcceptRef = createRef<HTMLInputElement>();
+  const [jupyterlabKeybindingAcceptText, setJupyterlabKeybindingAcceptText] = useState('');
+  const jupyterlabKeybindingDismissRef = createRef<HTMLInputElement>();
+  const [jupyterlabKeybindingDismissText, setJupyterlabKeybindingDismissText] = useState('');
+  const jupyterNotebookKeybindingAcceptRef = createRef<HTMLInputElement>();
+  const [jupyterNotebookKeybindingAcceptText, setJupyterNotebookKeybindingAcceptText] =
+    useState('');
+
   useEffect(() => {
     (async () => {
       setPortalUrlText((await getStorageItem('portalUrl')) ?? '');
@@ -156,6 +164,27 @@ const Options = () => {
     });
     (async () => {
       setModelText((await getStorageItem('enterpriseDefaultModel')) ?? '');
+    })().catch((e) => {
+      console.error(e);
+    });
+    (async () => {
+      setJupyterlabKeybindingAcceptText(
+        (await getStorageItem('jupyterlabKeybindingAccept')) ?? 'Tab'
+      );
+    })().catch((e) => {
+      console.error(e);
+    });
+    (async () => {
+      setJupyterlabKeybindingDismissText(
+        (await getStorageItem('jupyterlabKeybindingDismiss')) ?? 'Escape'
+      );
+    })().catch((e) => {
+      console.error(e);
+    });
+    (async () => {
+      setJupyterNotebookKeybindingAcceptText(
+        (await getStorageItem('jupyterNotebookKeybindingAccept')) ?? 'Tab'
+      );
     })().catch((e) => {
       console.error(e);
     });
@@ -285,6 +314,96 @@ const Options = () => {
       />
       <Box sx={{ my: 2, mx: 2 }}>
         <EditableList />
+      </Box>
+      <Divider
+        sx={{
+          padding: '0.5em',
+        }}
+      />
+      <Box sx={{ my: 2, mx: 2 }}>
+        <Typography variant="h6"> Jupyterlab settings </Typography>
+        <Typography variant="body2">
+          A single keystroke is supported. The syntax is described{' '}
+          <Link
+            href="https://github.com/jupyterlab/lumino/blob/f85aad4903504c942fc202c57270e707f1ab87c1/packages/commands/src/index.ts#L1061-L1083"
+            target="_blank"
+          >
+            here
+            <OpenInNewIcon
+              fontSize="small"
+              sx={{
+                verticalAlign: 'bottom',
+              }}
+            />
+          </Link>
+          .
+        </Typography>
+        <TextField
+          id="jupyterlabKeybindingAccept"
+          label="Accept key binding"
+          variant="standard"
+          fullWidth
+          inputRef={jupyterlabKeybindingAcceptRef}
+          value={jupyterlabKeybindingAcceptText}
+          onChange={(e) => setJupyterlabKeybindingAcceptText(e.target.value)}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const keybinding = jupyterlabKeybindingAcceptRef.current?.value;
+              await setStorageItem('jupyterlabKeybindingAccept', keybinding);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Enter Keybinding <LoginIcon />
+          </Button>
+        </Box>
+        <TextField
+          id="jupyterlabKeybindingDismiss"
+          label="Dismiss key binding"
+          variant="standard"
+          fullWidth
+          inputRef={jupyterlabKeybindingDismissRef}
+          value={jupyterlabKeybindingDismissText}
+          onChange={(e) => setJupyterlabKeybindingDismissText(e.target.value)}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const keybinding = jupyterlabKeybindingDismissRef.current?.value;
+              await setStorageItem('jupyterlabKeybindingDismiss', keybinding);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Enter Keybinding <LoginIcon />
+          </Button>
+        </Box>
+      </Box>
+      <Box sx={{ my: 2, mx: 2 }}>
+        <Typography variant="h6"> Jupyter Notebook settings </Typography>
+        <TextField
+          id="jupyterNotebookKeybindingAccept"
+          label="Accept key binding"
+          variant="standard"
+          fullWidth
+          inputRef={jupyterNotebookKeybindingAcceptRef}
+          value={jupyterNotebookKeybindingAcceptText}
+          onChange={(e) => setJupyterNotebookKeybindingAcceptText(e.target.value)}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const keybinding = jupyterNotebookKeybindingAcceptRef.current?.value;
+              await setStorageItem('jupyterNotebookKeybindingAccept', keybinding);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Enter Keybinding <LoginIcon />
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

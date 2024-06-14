@@ -13,13 +13,22 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.8.25';
+const EXTENSION_VERSION = '1.8.61';
 
 export const CODEIUM_DEBUG = false;
 
 export interface ClientSettings {
   apiKey?: string;
   defaultModel?: string;
+}
+
+export interface JupyterLabKeyBindings {
+  accept: string;
+  dismiss: string;
+}
+
+export interface JupyterNotebookKeyBindings {
+  accept: string;
 }
 
 async function getClientSettings(): Promise<ClientSettings> {
