@@ -286,7 +286,6 @@ getAllowedAndKeybindings(extensionId).then(
     if (injectionTypes.length === 0) {
       // if no meta tag is found, check the allowlist
       if (allowed) {
-        console.log('Injecting everything');
         // the url matches the allowlist
         addMonacoInject();
         addCodeMirror5GlobalInject(jupyterKeyBindings);
