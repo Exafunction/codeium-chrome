@@ -28,6 +28,7 @@ function isAllowedLanguage(language: Language) {
 export interface MaybeNotebook<T> {
   readonly textModels: T[];
   readonly currentTextModel: T;
+  readonly currentTextModelWithOutput?: T;
   // The offset into the value of getText(currentTextModel) at which to trigger a completion.
   readonly utf16CodeUnitOffset: number;
   getText(model: T): string;
@@ -46,13 +47,14 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
   let additionalUtf8ByteOffset = 0;
   let found = false;
   for (const [idx, previousModel] of textModels.entries()) {
-    if (modelIsExpected && maybeNotebook.currentTextModel === previousModel) {
+    const isCurrentCell = modelIsExpected && maybeNotebook.currentTextModel === previousModel;
+    if (isCurrentCell) {
       // There is an offset for all previous cells and the newline spacing after each one.
       additionalUtf8ByteOffset =
         relevantDocumentTexts
           .map((el) => numCodeUnitsToNumUtf8Bytes(el))
           .reduce((a, b) => a + b, 0) +
-        cellSplitString.length * relevantDocumentTexts.length;
+        cellSplitString.length * (relevantDocumentTexts.length + 1);
       found = true;
     }
     const previousModelLanguage = maybeNotebook.getLanguage(previousModel, idx);
@@ -62,7 +64,13 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
       if (previousModelLanguage === Language.MARKDOWN) {
         continue;
       } else if (previousModelLanguage === modelLanguage) {
-        relevantDocumentTexts.push(maybeNotebook.getText(previousModel));
+        if (isCurrentCell && maybeNotebook.currentTextModelWithOutput !== undefined) {
+          relevantDocumentTexts.push(
+            maybeNotebook.getText(maybeNotebook.currentTextModelWithOutput)
+          );
+        } else {
+          relevantDocumentTexts.push(maybeNotebook.getText(previousModel));
+        }
       }
     } else if (modelIsMarkdown) {
       if (previousModelLanguage === Language.MARKDOWN) {
@@ -76,8 +84,12 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
       }
     }
   }
-  const currentModelText = maybeNotebook.getText(maybeNotebook.currentTextModel);
-  const text = found ? relevantDocumentTexts.join(cellSplitString) : currentModelText;
+  const currentModelText = maybeNotebook.getText(
+    maybeNotebook.currentTextModelWithOutput ?? maybeNotebook.currentTextModel
+  );
+  const text = found
+    ? `${cellSplitString}${relevantDocumentTexts.join(cellSplitString)}`
+    : `${cellSplitString}${currentModelText}`;
   const utf8ByteOffset = numCodeUnitsToNumUtf8Bytes(
     currentModelText,
     maybeNotebook.utf16CodeUnitOffset

@@ -20,6 +20,10 @@ export interface Storage {
     current: string[];
   };
   enterpriseDefaultModel?: string;
+  jupyterlabKeybindingAccept?: string;
+  jupyterlabKeybindingDismiss?: string;
+  jupyterNotebookKeybindingAccept?: string;
+  jupyterNotebookKeybindingDismiss?: string;
 }
 
 // In case the defaults change over time, reconcile the saved setting with the
@@ -49,6 +53,18 @@ export function computeAllowlist(
     }
   }
   return allowlist.current;
+}
+
+export async function populateFromManagedStorage(): Promise<void> {
+  const managedStorageItems = chrome.storage.managed.get(['portalUrl', 'enterpriseDefaultModel']);
+  void managedStorageItems.then((result) => {
+    if (result.portalUrl !== undefined) {
+      void setStorageItem('portalUrl', result.portalUrl);
+    }
+    if (result.enterpriseDefaultModel !== undefined) {
+      void setStorageItem('enterpriseDefaultModel', result.enterpriseDefaultModel);
+    }
+  });
 }
 
 export function getStorageData(): Promise<Storage> {
@@ -117,6 +133,9 @@ export function setStorageItem<Key extends keyof Storage>(
 }
 
 export async function initializeStorageWithDefaults(defaults: Storage) {
+  if (CODEIUM_ENTERPRISE) {
+    await populateFromManagedStorage();
+  }
   const currentStorageData = await getStorageData();
   const newStorageData = Object.assign({}, defaults, currentStorageData);
   await setStorageData(newStorageData);

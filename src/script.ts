@@ -3,6 +3,7 @@ import type * as monaco from 'monaco-editor';
 
 import { addListeners } from './codemirror';
 import { CodeMirrorState } from './codemirrorInject';
+import { JupyterNotebookKeyBindings } from './common';
 import { inject as jupyterInject } from './jupyterInject';
 import { getPlugin } from './jupyterlabPlugin';
 import { MonacoCompletionProvider, MonacoSite, OMonacoSite } from './monacoCompletionProvider';
@@ -13,13 +14,21 @@ declare type CodeMirror = typeof import('codemirror');
 const params = new URLSearchParams((document.currentScript as HTMLScriptElement).src.split('?')[1]);
 const extensionId = params.get('id')!;
 
-async function getAllowed(extensionId: string): Promise<boolean> {
-  const allowed = await new Promise<boolean>((resolve) => {
-    chrome.runtime.sendMessage(extensionId, { type: 'allowed' }, (response: boolean) => {
-      resolve(response);
-    });
-  });
-  return allowed;
+async function getAllowedAndKeybindings(
+  extensionId: string
+): Promise<{ allowed: boolean; keyBindings: JupyterNotebookKeyBindings }> {
+  const result = await new Promise<{ allowed: any; keyBindings: JupyterNotebookKeyBindings }>(
+    (resolve) => {
+      chrome.runtime.sendMessage(
+        extensionId,
+        { type: 'allowed_and_keybindings' },
+        (response: { allowed: boolean; keyBindings: JupyterNotebookKeyBindings }) => {
+          resolve(response);
+        }
+      );
+    }
+  );
+  return result;
 }
 
 // Clear any bad state from another tab.
@@ -91,7 +100,7 @@ const addMonacoInject = () =>
           _monaco.editor.onDidCreateEditor((editor: monaco.editor.ICodeEditor) => {
             completionProvider.addEditor(editor);
           });
-          console.log('Activated Codeium: Monaco');
+          console.log('Codeium: Activated Monaco');
         });
       },
     },
@@ -115,7 +124,7 @@ if (jupyterConfigDataElement !== null) {
         _jupyterapp.registerPlugin(p);
         _jupyterapp.activatePlugin(p.id).then(
           () => {
-            console.log('Activated Codeium: Jupyter 3.x');
+            console.log('Codeium: Activated JupyterLab 3.x');
           },
           (e) => {
             console.error(e);
@@ -140,7 +149,7 @@ if (jupyterConfigDataElement !== null) {
         _jupyterlab.registerPlugin(p);
         _jupyterlab.activatePlugin(p.id).then(
           () => {
-            console.log('Activated Codeium: Jupyter 2.x');
+            console.log('Codeium: Activated JupyterLab 2.x');
           },
           (e) => {
             console.error(e);
@@ -158,7 +167,7 @@ const SUPPORTED_CODEMIRROR_SITES = [
   { pattern: /https:\/\/(.*\.)?codeshare\.io(\/.*)?/, multiplayer: true },
 ];
 
-const addCodeMirror5GlobalInject = () =>
+const addCodeMirror5GlobalInject = (keybindings: JupyterNotebookKeyBindings | undefined) =>
   Object.defineProperty(window, 'CodeMirror', {
     get: function () {
       return this._codeium_CodeMirror;
@@ -175,14 +184,19 @@ const addCodeMirror5GlobalInject = () =>
       // We rely on the fact that the Jupyter variable is defined first.
       if (Object.prototype.hasOwnProperty.call(this, 'Jupyter')) {
         injectCodeMirror = true;
-        const jupyterState = jupyterInject(extensionId, this.Jupyter);
-        addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
-        console.log('Activated Codeium');
+        if (keybindings === undefined) {
+          console.warn('Codeium found no keybindings for Jupyter Notebook');
+          return;
+        } else {
+          const jupyterState = jupyterInject(extensionId, this.Jupyter, keybindings);
+          addListeners(cm as CodeMirror, jupyterState.codeMirrorManager);
+          console.log('Activated Codeium for Jupyter Notebook');
+        }
       } else {
         let multiplayer = false;
         for (const pattern of SUPPORTED_CODEMIRROR_SITES) {
           if (pattern.pattern.test(window.location.href)) {
-            console.log('Codeium: Activating CodeMirror');
+            console.log('Codeium: Activating CodeMirror Site');
             injectCodeMirror = true;
             multiplayer = pattern.multiplayer;
             break;
@@ -193,7 +207,7 @@ const addCodeMirror5GlobalInject = () =>
         }
         if (injectCodeMirror) {
           new CodeMirrorState(extensionId, cm as CodeMirror, multiplayer);
-          console.log('Activated Codeium');
+          console.log('Codeium: Activating CodeMirror');
         }
       }
     },
@@ -242,8 +256,10 @@ const addCodeMirror5LocalInject = () => {
   }, 500);
 };
 
-getAllowed(extensionId).then(
-  (allowed) => {
+getAllowedAndKeybindings(extensionId).then(
+  (allowedAndKeybindings) => {
+    const allowed = allowedAndKeybindings.allowed;
+    const jupyterKeyBindings = allowedAndKeybindings.keyBindings;
     const validInjectTypes = ['monaco', 'codemirror5', 'none'];
     const metaTag = document.querySelector('meta[name="codeium:type"]');
     const injectionTypes =
@@ -263,7 +279,7 @@ getAllowed(extensionId).then(
     }
 
     if (injectionTypes.includes('codemirror5')) {
-      addCodeMirror5GlobalInject();
+      addCodeMirror5GlobalInject(jupyterKeyBindings);
       addCodeMirror5LocalInject();
     }
 
@@ -272,7 +288,7 @@ getAllowed(extensionId).then(
       if (allowed) {
         // the url matches the allowlist
         addMonacoInject();
-        addCodeMirror5GlobalInject();
+        addCodeMirror5GlobalInject(jupyterKeyBindings);
         addCodeMirror5LocalInject();
         return;
       }

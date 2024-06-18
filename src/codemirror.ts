@@ -14,11 +14,13 @@ import {
 
 function computeTextAndOffsetsForCodeMirror(
   textModels: CodeMirror.Doc[],
-  currentTextModel: CodeMirror.Doc
+  currentTextModel: CodeMirror.Doc,
+  currentTextModelWithOutput: CodeMirror.Doc | undefined
 ): TextAndOffsets {
   return computeTextAndOffsets({
     textModels,
     currentTextModel,
+    currentTextModelWithOutput: currentTextModelWithOutput,
     utf16CodeUnitOffset: currentTextModel.indexFromPos(currentTextModel.getCursor()),
     getText: (model) => model.getValue(),
     getLanguage: (model) => language(model, undefined),
@@ -108,6 +110,7 @@ export class CodeMirrorManager {
   async triggerCompletion(
     textModels: CodeMirror.Doc[],
     currentTextModel: CodeMirror.Doc,
+    currentTextModelWithOutput: CodeMirror.Doc | undefined,
     editorOptions: EditorOptions,
     relativePath: string | undefined,
     createDisposables: (() => IDisposable[]) | undefined
@@ -115,7 +118,8 @@ export class CodeMirrorManager {
     const cursor = currentTextModel.getCursor();
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = computeTextAndOffsetsForCodeMirror(
       textModels,
-      currentTextModel
+      currentTextModel,
+      currentTextModelWithOutput
     );
     const numUtf8Bytes = additionalUtf8ByteOffset + utf8ByteOffset;
     const request = new GetCompletionsRequest({
@@ -299,7 +303,8 @@ export class CodeMirrorManager {
   beforeMainKeyHandler(
     doc: CodeMirror.Doc,
     event: KeyboardEvent,
-    alsoHandle: { tab: boolean; escape: boolean }
+    alsoHandle: { tab: boolean; escape: boolean },
+    tabKey: string = 'Tab'
   ): { consumeEvent: boolean | undefined; forceTriggerCompletion: boolean } {
     let forceTriggerCompletion = false;
     if (event.ctrlKey) {
@@ -330,12 +335,22 @@ export class CodeMirrorManager {
         this.clearCompletion(`key: ${event.key}`);
         return { consumeEvent: false, forceTriggerCompletion };
     }
+    // Shift-tab in jupyter notebooks shows documentation.
+    if (event.key === 'Tab' && event.shiftKey) {
+      return { consumeEvent: false, forceTriggerCompletion };
+    }
     if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-      if (alsoHandle.tab && event.key === 'Tab' && this.acceptCompletion()) {
+      if (alsoHandle.tab && event.key === tabKey && this.acceptCompletion()) {
         return { consumeEvent: true, forceTriggerCompletion };
       }
       if (alsoHandle.escape && event.key === 'Escape' && this.clearCompletion('user dismissed')) {
         return { consumeEvent: true, forceTriggerCompletion };
+      }
+      // Special case if we are in jupyter notebooks and the tab key has been rebinded.
+      // We do not want to consume the default keybinding, because it triggers the default
+      // jupyter completion.
+      if (alsoHandle.tab && tabKey != 'Tab') {
+        return { consumeEvent: false, forceTriggerCompletion };
       }
     }
     const cursor = doc.getCursor();
@@ -374,6 +389,28 @@ export class CodeMirrorManager {
       div.addEventListener('mousedown', () => {
         this.clearCompletion('mousedown');
       });
+      const mutationObserver = new MutationObserver(() => {
+        // Check for jupyterlab-vim command mode.
+        if (div.classList.contains('cm-fat-cursor')) {
+          this.clearCompletion('vim');
+        }
+      });
+      mutationObserver.observe(div, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+      const completer = document.body.querySelector('.jp-Completer');
+      if (completer !== null) {
+        const completerMutationObserver = new MutationObserver(() => {
+          if (!completer?.classList.contains('lm-mod-hidden')) {
+            this.clearCompletion('completer');
+          }
+        });
+        completerMutationObserver.observe(completer, {
+          attributes: true,
+          attributeFilter: ['class'],
+        });
+      }
     };
   }
 }

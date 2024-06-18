@@ -29,6 +29,8 @@ const MIME_MAP = new Map<string, Language>([
   ['text/typescript-jsx', Language.TSX],
   // mode: mllike
   ['text/x-ocaml', Language.OCAML],
+  // Jupyterlab specific
+  ['text/x-ipython', Language.PYTHON],
 ]);
 
 const MODE_MAP = new Map<string, Language>([
@@ -95,7 +97,7 @@ export function language(doc: CodeMirror.Doc, path: string | undefined): Languag
       }
     }
   }
-  const mime = doc.getEditor()?.getOption('mode');
+  const mime = doc.getEditor()?.getOption('mode') ?? doc.modeOption;
   if (typeof mime === 'string') {
     const language = MIME_MAP.get(mime);
     if (language !== undefined) {

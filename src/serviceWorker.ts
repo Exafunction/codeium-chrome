@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { registerUser } from './auth';
 import {
   GetCompletionsResponseMessage,
+  JupyterLabKeyBindings,
+  JupyterNotebookKeyBindings,
   LanguageServerServiceWorkerClient,
   LanguageServerWorkerRequest,
 } from './common';
@@ -12,6 +14,7 @@ import {
   defaultAllowlist,
   getGeneralPortalUrl,
   getStorageItem,
+  getStorageItems,
   initializeStorageWithDefaults,
   setStorageItem,
 } from './storage';
@@ -65,21 +68,50 @@ chrome.runtime.onInstalled.addListener(async () => {
 //  - request for api key
 //  - set icon and error message
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  if (message.type === 'allowed') {
+  if (message.type === 'allowed_and_keybindings') {
     (async () => {
+      // If not allowed, the keybindings can be undefined.
+      let allowed = false;
+      const defaultKeyBindings: JupyterNotebookKeyBindings = {
+        accept: 'Tab',
+      };
       if (sender.url === undefined) {
-        sendResponse(false);
+        sendResponse({ allowed: false, keyBindings: defaultKeyBindings });
         return;
       }
-      const allowlist = await getStorageItem('allowlist');
+      const { allowlist: allowlist, jupyterNotebookKeybindingAccept: accept } =
+        await getStorageItems(['allowlist', 'jupyterNotebookKeybindingAccept']);
       for (const addr of computeAllowlist(allowlist)) {
         const host = new RegExp(addr);
         if (host.test(sender.url)) {
-          sendResponse(true);
-          return;
+          allowed = true;
+          break;
         }
       }
-      sendResponse(false);
+
+      if (!allowed) {
+        sendResponse({ allowed: false, keyBindings: defaultKeyBindings });
+      }
+
+      const keybindings: JupyterNotebookKeyBindings = {
+        accept: accept ? accept : 'Tab',
+      };
+
+      sendResponse({ allowed: allowed, keyBindings: keybindings });
+    })().catch((e) => {
+      console.error(e);
+    });
+    return true;
+  }
+  if (message.type === 'jupyterlab') {
+    (async () => {
+      const { jupyterlabKeybindingAccept: accept, jupyterlabKeybindingDismiss: dismiss } =
+        await getStorageItems(['jupyterlabKeybindingAccept', 'jupyterlabKeybindingDismiss']);
+      const keybindings: JupyterLabKeyBindings = {
+        accept: accept ? accept : 'Tab',
+        dismiss: dismiss ? dismiss : 'Escape',
+      };
+      sendResponse(keybindings);
     })().catch((e) => {
       console.error(e);
     });
