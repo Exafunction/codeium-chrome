@@ -322,19 +322,6 @@ export class CodeMirrorManager {
       this.clearCompletion('composing');
       return { consumeEvent: false, forceTriggerCompletion };
     }
-    switch (event.key) {
-      case 'Delete':
-      case 'ArrowDown':
-      case 'ArrowUp':
-      case 'ArrowLeft':
-      case 'ArrowRight':
-      case 'Home':
-      case 'End':
-      case 'PageDown':
-      case 'PageUp':
-        this.clearCompletion(`key: ${event.key}`);
-        return { consumeEvent: false, forceTriggerCompletion };
-    }
     // Shift-tab in jupyter notebooks shows documentation.
     if (event.key === 'Tab' && event.shiftKey) {
       return { consumeEvent: false, forceTriggerCompletion };
@@ -349,9 +336,22 @@ export class CodeMirrorManager {
       // Special case if we are in jupyter notebooks and the tab key has been rebinded.
       // We do not want to consume the default keybinding, because it triggers the default
       // jupyter completion.
-      if (alsoHandle.tab && tabKey != 'Tab') {
+      if (alsoHandle.tab && tabKey != 'Tab' && event.key === 'Tab') {
         return { consumeEvent: false, forceTriggerCompletion };
       }
+    }
+    switch (event.key) {
+      case 'Delete':
+      case 'ArrowDown':
+      case 'ArrowUp':
+      case 'ArrowLeft':
+      case 'ArrowRight':
+      case 'Home':
+      case 'End':
+      case 'PageDown':
+      case 'PageUp':
+        this.clearCompletion(`key: ${event.key}`);
+        return { consumeEvent: false, forceTriggerCompletion };
     }
     const cursor = doc.getCursor();
     const characterBeforeCursor =
