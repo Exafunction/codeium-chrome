@@ -56,13 +56,24 @@ export function computeAllowlist(
 }
 
 export async function populateFromManagedStorage(): Promise<void> {
-  const managedStorageItems = chrome.storage.managed.get(['portalUrl', 'enterpriseDefaultModel']);
+  const managedStorageItems = chrome.storage.managed.get([
+    'codeiumPortalUrl',
+    'codeiumEnterpriseDefaultModel',
+    'codeiumAllowlist',
+  ]);
   void managedStorageItems.then((result) => {
     if (result.portalUrl !== undefined) {
-      void setStorageItem('portalUrl', result.portalUrl);
+      void setStorageItem('portalUrl', result.codeiumPortalUrl);
     }
     if (result.enterpriseDefaultModel !== undefined) {
-      void setStorageItem('enterpriseDefaultModel', result.enterpriseDefaultModel);
+      void setStorageItem('enterpriseDefaultModel', result.codeiumEnterpriseDefaultModel);
+    }
+    if (result.allowlist !== undefined) {
+      const lst = result.codeiumAllowlist
+        .split('\n')
+        .map((x: string) => x.trim())
+        .filter((x: string) => x !== '');
+      void setStorageItem('allowlist', { defaults: defaultAllowlist, current: lst });
     }
   });
 }
