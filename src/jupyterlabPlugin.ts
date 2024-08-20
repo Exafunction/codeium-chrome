@@ -195,6 +195,7 @@ class CodeiumPlugin {
       const context = widget !== null ? this.documentManager.contextForWidget(widget) : undefined;
       const currentTextModel = codeMirrorEditor.doc;
       await this.codeMirrorManager.triggerCompletion(
+        true, // isNotebook
         textModels,
         currentTextModel,
         currentTextModelWithOutput,

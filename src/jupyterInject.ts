@@ -148,6 +148,7 @@ class JupyterState {
           const relativePath = path.endsWith('.ipynb') ? path : undefined;
 
           await codeMirrorManager.triggerCompletion(
+            true, // isNotebook
             textModels,
             this.code_mirror.getDoc(),
             currentModelWithOutput,

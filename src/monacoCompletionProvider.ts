@@ -274,6 +274,14 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
     // Perhaps add something for (Stackblitz or Quadratic)?
   }
 
+  private isNotebook() {
+    return (
+      OMonacoSite.COLAB === this.monacoSite ||
+      OMonacoSite.DATABRICKS === this.monacoSite ||
+      OMonacoSite.DEEPNOTE === this.monacoSite
+    );
+  }
+
   private absolutePath(model: monaco.editor.ITextModel): string | undefined {
     // Given we are using path, note the docs on fsPath: https://microsoft.github.io/monaco-editor/api/classes/monaco.Uri.html#fsPath
     return model.uri.path;
@@ -328,6 +336,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         const valueAndStartOffset = getValueAndStartOffset(this.monacoSite, model);
         // computeTextAndOffsets is receiving shortened strings.
         return computeTextAndOffsets({
+          isNotebook: this.isNotebook(),
           textModels: rawTexts.map((m) => getValueAndStartOffset(this.monacoSite, m).value),
           currentTextModel: valueAndStartOffset.value,
           utf16CodeUnitOffset: model.getOffsetAt(position) - valueAndStartOffset.utf16Offset,
@@ -384,6 +393,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
       }
       const valueAndStartOffset = getValueAndStartOffset(this.monacoSite, model);
       return computeTextAndOffsets({
+        isNotebook: this.isNotebook(),
         textModels: rawTexts.map((m) => getValueAndStartOffset(this.monacoSite, m).value),
         currentTextModel: valueAndStartOffset.value,
         utf16CodeUnitOffset: model.getOffsetAt(position) - valueAndStartOffset.utf16Offset,
@@ -397,6 +407,7 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
       });
     }
     return computeTextAndOffsets({
+      isNotebook: this.isNotebook(),
       textModels: this.textModels(model),
       currentTextModel: model,
       utf16CodeUnitOffset:
