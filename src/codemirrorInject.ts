@@ -67,6 +67,7 @@ export class CodeMirrorState {
         }
 
         await this.codeMirrorManager.triggerCompletion(
+          false, // isNotebook
           this.docs,
           editor.getDoc(),
           undefined,

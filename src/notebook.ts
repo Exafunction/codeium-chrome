@@ -29,6 +29,8 @@ export interface MaybeNotebook<T> {
   readonly textModels: T[];
   readonly currentTextModel: T;
   readonly currentTextModelWithOutput?: T;
+  // Whether the document is a notebook. For notebooks, we will prepend with \nCELL:\n
+  readonly isNotebook: boolean;
   // The offset into the value of getText(currentTextModel) at which to trigger a completion.
   readonly utf16CodeUnitOffset: number;
   getText(model: T): string;
@@ -54,7 +56,8 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
         relevantDocumentTexts
           .map((el) => numCodeUnitsToNumUtf8Bytes(el))
           .reduce((a, b) => a + b, 0) +
-        cellSplitString.length * (relevantDocumentTexts.length + 1);
+        cellSplitString.length *
+          (relevantDocumentTexts.length + (maybeNotebook.isNotebook ? 1 : 0));
       found = true;
     }
     const previousModelLanguage = maybeNotebook.getLanguage(previousModel, idx);
@@ -87,9 +90,8 @@ export function computeTextAndOffsets<T>(maybeNotebook: MaybeNotebook<T>): TextA
   const currentModelText = maybeNotebook.getText(
     maybeNotebook.currentTextModelWithOutput ?? maybeNotebook.currentTextModel
   );
-  const text = found
-    ? `${cellSplitString}${relevantDocumentTexts.join(cellSplitString)}`
-    : `${cellSplitString}${currentModelText}`;
+  let text = found ? `${relevantDocumentTexts.join(cellSplitString)}` : `${currentModelText}`;
+  text = maybeNotebook.isNotebook ? `${cellSplitString}${text}` : text;
   const utf8ByteOffset = numCodeUnitsToNumUtf8Bytes(
     currentModelText,
     maybeNotebook.utf16CodeUnitOffset

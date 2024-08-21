@@ -13,6 +13,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 function computeTextAndOffsetsForCodeMirror(
+  isNotebook: boolean,
   textModels: CodeMirror.Doc[],
   currentTextModel: CodeMirror.Doc,
   currentTextModelWithOutput: CodeMirror.Doc | undefined
@@ -21,6 +22,7 @@ function computeTextAndOffsetsForCodeMirror(
     textModels,
     currentTextModel,
     currentTextModelWithOutput: currentTextModelWithOutput,
+    isNotebook: isNotebook,
     utf16CodeUnitOffset: currentTextModel.indexFromPos(currentTextModel.getCursor()),
     getText: (model) => model.getValue(),
     getLanguage: (model) => language(model, undefined),
@@ -108,6 +110,7 @@ export class CodeMirrorManager {
   }
 
   async triggerCompletion(
+    isNotebook: boolean,
     textModels: CodeMirror.Doc[],
     currentTextModel: CodeMirror.Doc,
     currentTextModelWithOutput: CodeMirror.Doc | undefined,
@@ -117,6 +120,7 @@ export class CodeMirrorManager {
   ): Promise<void> {
     const cursor = currentTextModel.getCursor();
     const { text, utf8ByteOffset, additionalUtf8ByteOffset } = computeTextAndOffsetsForCodeMirror(
+      isNotebook,
       textModels,
       currentTextModel,
       currentTextModelWithOutput
