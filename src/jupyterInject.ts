@@ -1,8 +1,10 @@
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager } from './codemirror';
-import { JupyterNotebookKeyBindings } from './common';
+import { DEFAULT_PATH, JupyterNotebookKeyBindings } from './common';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
+
+// Note: this file only deals with jupyter notebook 6 (not Jupyter Lab)
 
 declare class Cell {
   code_mirror: CodeMirror.Editor;
@@ -63,7 +65,7 @@ class JupyterState {
     this.keybindings = keybindings;
   }
 
-  patchCellKeyEvent() {
+  patchCellKeyEvent(debounceMs?: number) {
     const beforeMainHandler = (doc: CodeMirror.Doc, event: KeyboardEvent) => {
       return this.codeMirrorManager.beforeMainKeyHandler(
         doc,
@@ -96,7 +98,7 @@ class JupyterState {
               return;
             }
           }
-          const textModels = [];
+          const textModels: CodeMirror.Doc[] = [];
 
           const editableCells = [...this.notebook.get_cells()];
           let currentModelWithOutput;
@@ -143,9 +145,10 @@ class JupyterState {
 
           const url = window.location.href;
           // URLs are usually of the form, http://localhost:XXXX/notebooks/path/to/notebook.ipynb
-          // We only want the path to the notebook.
+          // We only want path/to/notebook.ipynb
+          // If the URL is not of this form, we just use "unknown_url"
           const path = new URL(url).pathname;
-          const relativePath = path.endsWith('.ipynb') ? path : undefined;
+          const relativePath = path.endsWith('.ipynb') ? path.replace(/^\//, '') : undefined;
 
           await codeMirrorManager.triggerCompletion(
             true, // isNotebook
@@ -156,10 +159,10 @@ class JupyterState {
               tabSize: BigInt(editor.getOption('tabSize') ?? 4),
               insertSpaces: !(editor.getOption('indentWithTabs') ?? false),
             }),
-            relativePath,
-            undefined
+            relativePath ?? DEFAULT_PATH,
+            undefined // create_disposables
           );
-        });
+        }, debounceMs ?? 0);
       };
     };
     this.jupyter.CodeCell.prototype.handle_codemirror_keyevent = replaceOriginalHandler(
@@ -189,10 +192,11 @@ class JupyterState {
 export function inject(
   extensionId: string,
   jupyter: Jupyter,
-  keybindings: JupyterNotebookKeyBindings
+  keybindings: JupyterNotebookKeyBindings,
+  debounceMs?: number
 ): JupyterState {
   const jupyterState = new JupyterState(extensionId, jupyter, keybindings);
-  jupyterState.patchCellKeyEvent();
+  jupyterState.patchCellKeyEvent(debounceMs);
   jupyterState.patchShortcutManagerHandler();
   return jupyterState;
 }

@@ -6,8 +6,14 @@ declare type CodeMirror = typeof import('codemirror');
 export class CodeMirrorState {
   codeMirrorManager: CodeMirrorManager;
   docs: CodeMirror.Doc[] = [];
+  debounceMs: number = 0;
   hookedEditors = new WeakSet<CodeMirror.Editor>();
-  constructor(extensionId: string, cm: CodeMirror | undefined, readonly multiplayer: boolean) {
+  constructor(
+    extensionId: string,
+    cm: CodeMirror | undefined,
+    readonly multiplayer: boolean,
+    debounceMs?: number
+  ) {
     this.codeMirrorManager = new CodeMirrorManager(extensionId, {
       ideName: 'codemirror',
       ideVersion: `${cm?.version ?? 'unknown'}-${window.location.hostname}`,
@@ -15,6 +21,7 @@ export class CodeMirrorState {
     if (cm !== undefined) {
       cm.defineInitHook(this.editorHook());
     }
+    this.debounceMs = debounceMs ?? 0;
   }
 
   editorHook(): (editor: CodeMirror.Editor) => void {
@@ -78,7 +85,7 @@ export class CodeMirrorState {
           undefined,
           undefined
         );
-      });
+      }, this.debounceMs);
     });
   }
 }

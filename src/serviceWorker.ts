@@ -68,7 +68,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 //  - request for api key
 //  - set icon and error message
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  if (message.type === 'allowed_and_keybindings') {
+  if (message.type === 'jupyter_notebook_allowed_and_keybindings') {
     (async () => {
       // If not allowed, the keybindings can be undefined.
       let allowed = false;
@@ -91,13 +91,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
       if (!allowed) {
         sendResponse({ allowed: false, keyBindings: defaultKeyBindings });
+      } else {
+        const keybindings: JupyterNotebookKeyBindings = {
+          accept: accept ? accept : 'Tab',
+        };
+
+        sendResponse({ allowed: allowed, keyBindings: keybindings });
       }
-
-      const keybindings: JupyterNotebookKeyBindings = {
-        accept: accept ? accept : 'Tab',
-      };
-
-      sendResponse({ allowed: allowed, keyBindings: keybindings });
     })().catch((e) => {
       console.error(e);
     });
@@ -112,6 +112,15 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         dismiss: dismiss ? dismiss : 'Escape',
       };
       sendResponse(keybindings);
+    })().catch((e) => {
+      console.error(e);
+    });
+    return true;
+  }
+  if (message.type === 'debounce_ms') {
+    (async () => {
+      const { jupyterDebounceMs: jupyterDebounceMs } = await getStorageItems(['jupyterDebounceMs']);
+      sendResponse({ debounceMs: jupyterDebounceMs ? jupyterDebounceMs : 0 });
     })().catch((e) => {
       console.error(e);
     });

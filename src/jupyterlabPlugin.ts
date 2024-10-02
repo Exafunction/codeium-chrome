@@ -55,17 +55,21 @@ class CodeiumPlugin {
   codeMirrorManager: CodeMirrorManager;
   keybindings: Promise<JupyterLabKeyBindings>;
 
+  debounceMs: number;
+
   constructor(
     readonly extensionId: string,
     app: JupyterFrontEnd,
     notebookTracker: INotebookTracker,
     editorTracker: IEditorTracker,
-    documentManager: IDocumentManager
+    documentManager: IDocumentManager,
+    debounceMs: number
   ) {
     this.app = app;
     this.notebookTracker = notebookTracker;
     this.editorTracker = editorTracker;
     this.documentManager = documentManager;
+    this.debounceMs = debounceMs;
     this.codeMirrorManager = new CodeMirrorManager(extensionId, {
       ideName: 'jupyterlab',
       ideVersion: `${app.name.toLowerCase()} ${app.version}`,
@@ -224,7 +228,7 @@ class CodeiumPlugin {
           return keybindingDisposables;
         }
       );
-    });
+    }, this.debounceMs);
     void chrome.runtime.sendMessage(this.extensionId, { type: 'success' });
     return false;
   }
@@ -232,7 +236,8 @@ class CodeiumPlugin {
 
 export function getPlugin(
   extensionId: string,
-  jupyterapp: JupyterFrontEnd
+  jupyterapp: JupyterFrontEnd,
+  debounceMs: number
 ): JupyterFrontEndPlugin<void> {
   return {
     id: 'codeium:plugin',
@@ -244,7 +249,14 @@ export function getPlugin(
       documentManager: IDocumentManager
     ) => {
       // This indirection is necessary to get us a `this` to store state in.
-      new CodeiumPlugin(extensionId, app, notebookTracker, editorTracker, documentManager);
+      new CodeiumPlugin(
+        extensionId,
+        app,
+        notebookTracker,
+        editorTracker,
+        documentManager,
+        debounceMs
+      );
     },
     requires: [
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

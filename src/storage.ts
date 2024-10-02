@@ -24,6 +24,7 @@ export interface Storage {
   jupyterlabKeybindingDismiss?: string;
   jupyterNotebookKeybindingAccept?: string;
   jupyterNotebookKeybindingDismiss?: string;
+  jupyterDebounceMs?: number;
 }
 
 // In case the defaults change over time, reconcile the saved setting with the
@@ -200,4 +201,5 @@ export const defaultAllowlist = [
   /https?:\/\/www\.codewars\.com(\/.*)?/,
   /https:\/\/(.*\.)?github\.com(\/.*)?/,
   /http:\/\/(localhost|127\.0\.0\.1):[0-9]+\/.*\.ipynb/,
+  /https:\/\/(.*\.)?script.google.com(\/.*)?/,
 ].map((reg) => reg.source);

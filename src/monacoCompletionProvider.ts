@@ -4,6 +4,7 @@ import { IdeInfo, LanguageServerClient } from './common';
 import { getLanguage } from './monacoLanguages';
 import { TextAndOffsets, computeTextAndOffsets } from './notebook';
 import { numUtf8BytesToNumCodeUnits } from './utf';
+import { sleep } from './utils';
 import { Language } from '../proto/exa/codeium_common_pb/codeium_common_pb';
 import {
   CompletionItem,
@@ -197,9 +198,11 @@ function colabRelativePath(): string | undefined {
     return undefined;
   }
   if (fileId.source === 'drive') {
-    return `${fileId.fileId}.ipynb`;
+    let fileIdString = fileId.fileId;
+    fileIdString = fileIdString.replace(/^\//, '');
+    return `${fileIdString}.ipynb`;
   }
-  return fileId.fileId;
+  return fileId.fileId.replace(/^\//, '');
 }
 
 function deepnoteAndDatabricksRelativePath(url: string): string | undefined {
@@ -219,9 +222,11 @@ function deepnoteAndDatabricksRelativePath(url: string): string | undefined {
 export class MonacoCompletionProvider implements monaco.languages.InlineCompletionsProvider {
   modelUriToEditor = new Map<string, monaco.editor.ICodeEditor>();
   client: LanguageServerClient;
+  debounceMs: number;
 
-  constructor(readonly extensionId: string, readonly monacoSite: MonacoSite) {
+  constructor(readonly extensionId: string, readonly monacoSite: MonacoSite, debounceMs: number) {
     this.client = new LanguageServerClient(extensionId);
+    this.debounceMs = debounceMs;
   }
 
   getIdeInfo(): IdeInfo {
@@ -284,7 +289,11 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
 
   private absolutePath(model: monaco.editor.ITextModel): string | undefined {
     // Given we are using path, note the docs on fsPath: https://microsoft.github.io/monaco-editor/api/classes/monaco.Uri.html#fsPath
-    return model.uri.path;
+    if (this.monacoSite === OMonacoSite.COLAB) {
+      // The colab absolute path is something like the cell number (i.e. /3)
+      return colabRelativePath();
+    }
+    return model.uri.path.replace(/^\//, '');
     // TODO(prem): Adopt some site-specific convention.
   }
 
@@ -434,14 +443,15 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         language: getLanguage(getEditorLanguage(model)),
         cursorOffset: BigInt(numUtf8Bytes),
         lineEnding: '\n',
-        relativePath: this.relativePath(),
-        absolutePath: this.absolutePath(model),
+        relativePathMigrateMeToWorkspaceUri: this.relativePath(),
+        absoluteUri: 'file:///' + this.absolutePath(model),
       },
       editorOptions: {
         tabSize: BigInt(model.getOptions().tabSize),
         insertSpaces: model.getOptions().insertSpaces,
       },
     });
+    await sleep(this.debounceMs ?? 0);
     const response = await this.client.getCompletions(request);
     if (response === undefined) {
       return;
