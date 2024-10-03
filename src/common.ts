@@ -13,9 +13,10 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.12.7';
+const EXTENSION_VERSION = '1.20.4';
 
 export const CODEIUM_DEBUG = false;
+export const DEFAULT_PATH = 'unknown_url';
 
 export interface ClientSettings {
   apiKey?: string;

@@ -136,7 +136,7 @@ export class CodeMirrorManager {
         lineEnding: '\n',
         // We could use the regular path which could have a drive: prefix, but
         // this is probably unusual.
-        relativePath: relativePath,
+        absoluteUri: `file:///${relativePath}`,
       },
       editorOptions,
     });
@@ -330,6 +330,12 @@ export class CodeMirrorManager {
     if (event.key === 'Tab' && event.shiftKey) {
       return { consumeEvent: false, forceTriggerCompletion };
     }
+
+    // TODO(kevin): clean up autoHandle logic
+    // Currently we have:
+    // Jupyter Notebook:     tab = true,  escape = false
+    // Code Mirror Websites: tab = true,  escape = true
+    // Jupyter Lab:          tab = false, escape = false
     if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
       if (alsoHandle.tab && event.key === tabKey && this.acceptCompletion()) {
         return { consumeEvent: true, forceTriggerCompletion };
@@ -340,7 +346,7 @@ export class CodeMirrorManager {
       // Special case if we are in jupyter notebooks and the tab key has been rebinded.
       // We do not want to consume the default keybinding, because it triggers the default
       // jupyter completion.
-      if (alsoHandle.tab && tabKey != 'Tab' && event.key === 'Tab') {
+      if (alsoHandle.tab && !alsoHandle.escape && tabKey !== 'Tab' && event.key === 'Tab') {
         return { consumeEvent: false, forceTriggerCompletion };
       }
     }

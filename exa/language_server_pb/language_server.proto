@@ -63,9 +63,13 @@ message DocumentPosition {
 
 // Next ID: 9, Previous field: cursor_position.
 message Document {
-  string absolute_path = 1;
-  // Path relative to the root of the workspace.
-  string relative_path = 2;
+  // OS specific separators.
+  string absolute_path_migrate_me_to_uri = 1 [deprecated = true];
+  string absolute_uri = 12;
+  // Path relative to the root of the workspace. Slash separated.
+  // Leave empty if the document is not in the workspace.
+  string relative_path_migrate_me_to_workspace_uri = 2 [deprecated = true];
+  string workspace_uri = 13;
   string text = 3;
   // Language ID provided by the editor.
   string editor_language = 4 [(validate.rules).string.min_len = 1];
@@ -83,6 +87,13 @@ message Document {
       "\r\n"
     ]
   }];
+
+  // These fields are not used by the chrome extension.
+  Range visible_range = 9;
+  bool is_cutoff_start = 10;
+  bool is_cutoff_end = 11;
+  int32 lines_cutoff_start = 14;
+  int32 lines_cutoff_end = 15;
 }
 
 message ExperimentConfig {

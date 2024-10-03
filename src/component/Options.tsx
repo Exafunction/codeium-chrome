@@ -155,6 +155,8 @@ const Options = () => {
   const jupyterNotebookKeybindingAcceptRef = createRef<HTMLInputElement>();
   const [jupyterNotebookKeybindingAcceptText, setJupyterNotebookKeybindingAcceptText] =
     useState('');
+  const [jupyterDebounceMs, setJupyterDebounceMs] = useState(0);
+  const jupyterDebounceMsRef = createRef<HTMLInputElement>();
 
   useEffect(() => {
     (async () => {
@@ -185,6 +187,11 @@ const Options = () => {
       setJupyterNotebookKeybindingAcceptText(
         (await getStorageItem('jupyterNotebookKeybindingAccept')) ?? 'Tab'
       );
+    })().catch((e) => {
+      console.error(e);
+    });
+    (async () => {
+      setJupyterDebounceMs((await getStorageItem('jupyterDebounceMs')) ?? 0);
     })().catch((e) => {
       console.error(e);
     });
@@ -402,6 +409,31 @@ const Options = () => {
             sx={{ textTransform: 'none' }}
           >
             Enter Keybinding <LoginIcon />
+          </Button>
+        </Box>
+      </Box>
+      <Box sx={{ my: 2, mx: 2 }}>
+        <Typography variant="h6"> Jupyter debounce time </Typography>
+        <TextField
+          id="jupyterDebounceMs"
+          label="Debounce time (ms)"
+          variant="standard"
+          fullWidth
+          type="number"
+          inputRef={jupyterDebounceMsRef}
+          value={jupyterDebounceMs}
+          onChange={(e) => setJupyterDebounceMs(Number(e.target.value))}
+        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              const debounceTime = Number(jupyterDebounceMsRef.current?.value);
+              await setStorageItem('jupyterDebounceMs', debounceTime);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            Save <LoginIcon />
           </Button>
         </Box>
       </Box>
