@@ -9,8 +9,18 @@ import { type Widget } from '@lumino/widgets';
 import type CodeMirror from 'codemirror';
 
 import { CodeMirrorManager } from './codemirror';
-import type { JupyterLabKeyBindings } from './common';
+import type { JupyterLabKeyBindings, KeyCombination } from './common';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
+
+function formatJupyterLabKeyCombination(keyCombination: KeyCombination): string {
+  const parts: string[] = [];
+  if (keyCombination.ctrl) parts.push('Ctrl');
+  if (keyCombination.alt) parts.push('Alt');
+  if (keyCombination.shift) parts.push('Shift');
+  if (keyCombination.meta) parts.push('Meta');
+  parts.push(keyCombination.key);
+  return parts.join(' ');
+}
 
 const COMMAND_ACCEPT = 'codeium:accept-completion';
 const COMMAND_DISMISS = 'codeium:dismiss-completion';
@@ -212,7 +222,7 @@ class CodeiumPlugin {
           const keybindingDisposables = [
             this.app.commands.addKeyBinding({
               command: COMMAND_ACCEPT,
-              keys: [keybindings.accept],
+              keys: [formatJupyterLabKeyCombination(keybindings.accept)],
               selector: '.CodeMirror',
             }),
           ];
@@ -220,7 +230,7 @@ class CodeiumPlugin {
             keybindingDisposables.push(
               this.app.commands.addKeyBinding({
                 command: COMMAND_DISMISS,
-                keys: [keybindings.dismiss],
+                keys: [formatJupyterLabKeyCombination(keybindings.dismiss)],
                 selector: '.CodeMirror',
               })
             );

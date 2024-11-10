@@ -13,7 +13,7 @@ import {
 } from '../proto/exa/language_server_pb/language_server_pb';
 
 const EXTENSION_NAME = 'chrome';
-const EXTENSION_VERSION = '1.20.4';
+const EXTENSION_VERSION = '1.26.3';
 
 export const CODEIUM_DEBUG = false;
 export const DEFAULT_PATH = 'unknown_url';
@@ -23,13 +23,21 @@ export interface ClientSettings {
   defaultModel?: string;
 }
 
+export interface KeyCombination {
+  key: string;
+  ctrl?: boolean;
+  alt?: boolean;
+  shift?: boolean;
+  meta?: boolean;
+}
+
 export interface JupyterLabKeyBindings {
-  accept: string;
-  dismiss: string;
+  accept: KeyCombination;
+  dismiss: KeyCombination;
 }
 
 export interface JupyterNotebookKeyBindings {
-  accept: string;
+  accept: KeyCombination;
 }
 
 async function getClientSettings(): Promise<ClientSettings> {

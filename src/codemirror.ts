@@ -2,7 +2,7 @@ import { IDisposable } from '@lumino/disposable';
 import type CodeMirror from 'codemirror';
 
 import { editorLanguage, language } from './codemirrorLanguages';
-import { CODEIUM_DEBUG, IdeInfo, LanguageServerClient } from './common';
+import { CODEIUM_DEBUG, IdeInfo, KeyCombination, LanguageServerClient } from './common';
 import { TextAndOffsets, computeTextAndOffsets } from './notebook';
 import { numUtf8BytesToNumCodeUnits } from './utf';
 import { EditorOptions } from '../proto/exa/codeium_common_pb/codeium_common_pb';
@@ -308,27 +308,35 @@ export class CodeMirrorManager {
     doc: CodeMirror.Doc,
     event: KeyboardEvent,
     alsoHandle: { tab: boolean; escape: boolean },
-    tabKey: string = 'Tab'
+    keyCombination?: KeyCombination
   ): { consumeEvent: boolean | undefined; forceTriggerCompletion: boolean } {
     let forceTriggerCompletion = false;
-    if (event.ctrlKey) {
-      if (event.key === ' ') {
-        forceTriggerCompletion = true;
-      } else {
-        return { consumeEvent: false, forceTriggerCompletion };
-      }
+    if (event.ctrlKey && event.key === ' ') {
+      forceTriggerCompletion = true;
     }
+
     // Classic notebook may autocomplete these.
     if ('"\')}]'.includes(event.key)) {
       forceTriggerCompletion = true;
     }
+
     if (event.isComposing) {
       this.clearCompletion('composing');
       return { consumeEvent: false, forceTriggerCompletion };
     }
-    // Shift-tab in jupyter notebooks shows documentation.
-    if (event.key === 'Tab' && event.shiftKey) {
-      return { consumeEvent: false, forceTriggerCompletion };
+
+    // Accept completion logic
+    if (keyCombination) {
+      const matchesKeyCombination =
+        event.key.toLowerCase() === keyCombination.key.toLowerCase() &&
+        !!event.ctrlKey === !!keyCombination.ctrl &&
+        !!event.altKey === !!keyCombination.alt &&
+        !!event.shiftKey === !!keyCombination.shift &&
+        !!event.metaKey === !!keyCombination.meta;
+
+      if (matchesKeyCombination && this.acceptCompletion()) {
+        return { consumeEvent: true, forceTriggerCompletion };
+      }
     }
 
     // TODO(kevin): clean up autoHandle logic
@@ -336,20 +344,25 @@ export class CodeMirrorManager {
     // Jupyter Notebook:     tab = true,  escape = false
     // Code Mirror Websites: tab = true,  escape = true
     // Jupyter Lab:          tab = false, escape = false
-    if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-      if (alsoHandle.tab && event.key === tabKey && this.acceptCompletion()) {
-        return { consumeEvent: true, forceTriggerCompletion };
-      }
-      if (alsoHandle.escape && event.key === 'Escape' && this.clearCompletion('user dismissed')) {
-        return { consumeEvent: true, forceTriggerCompletion };
-      }
-      // Special case if we are in jupyter notebooks and the tab key has been rebinded.
-      // We do not want to consume the default keybinding, because it triggers the default
-      // jupyter completion.
-      if (alsoHandle.tab && !alsoHandle.escape && tabKey !== 'Tab' && event.key === 'Tab') {
-        return { consumeEvent: false, forceTriggerCompletion };
-      }
+
+    // Code Mirror Websites only
+    if (
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.shiftKey &&
+      alsoHandle.escape &&
+      event.key === 'Escape' &&
+      this.clearCompletion('user dismissed')
+    ) {
+      return { consumeEvent: true, forceTriggerCompletion };
     }
+
+    // Shift-tab in jupyter notebooks shows documentation.
+    if (event.key === 'Tab' && event.shiftKey) {
+      return { consumeEvent: false, forceTriggerCompletion };
+    }
+
     switch (event.key) {
       case 'Delete':
       case 'ArrowDown':

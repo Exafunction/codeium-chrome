@@ -5,6 +5,7 @@ import {
   GetCompletionsResponseMessage,
   JupyterLabKeyBindings,
   JupyterNotebookKeyBindings,
+  KeyCombination,
   LanguageServerServiceWorkerClient,
   LanguageServerWorkerRequest,
 } from './common';
@@ -63,6 +64,17 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 });
 
+const parseKeyCombination = (key: string): KeyCombination => {
+  const parts = key.split('+').map((k) => k.trim());
+  return {
+    key: parts[parts.length - 1],
+    ctrl: parts.includes('Ctrl'),
+    alt: parts.includes('Alt'),
+    shift: parts.includes('Shift'),
+    meta: parts.includes('Meta'),
+  };
+};
+
 // The only external messages:
 //  - website auth
 //  - request for api key
@@ -73,7 +85,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       // If not allowed, the keybindings can be undefined.
       let allowed = false;
       const defaultKeyBindings: JupyterNotebookKeyBindings = {
-        accept: 'Tab',
+        accept: { key: 'Tab', ctrl: false, alt: false, shift: false, meta: false },
       };
       if (sender.url === undefined) {
         sendResponse({ allowed: false, keyBindings: defaultKeyBindings });
@@ -89,15 +101,12 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         }
       }
 
-      if (!allowed) {
-        sendResponse({ allowed: false, keyBindings: defaultKeyBindings });
-      } else {
-        const keybindings: JupyterNotebookKeyBindings = {
-          accept: accept ? accept : 'Tab',
-        };
-
-        sendResponse({ allowed: allowed, keyBindings: keybindings });
-      }
+      sendResponse({
+        allowed,
+        keyBindings: {
+          accept: accept ? parseKeyCombination(accept) : defaultKeyBindings,
+        },
+      });
     })().catch((e) => {
       console.error(e);
     });
@@ -107,9 +116,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     (async () => {
       const { jupyterlabKeybindingAccept: accept, jupyterlabKeybindingDismiss: dismiss } =
         await getStorageItems(['jupyterlabKeybindingAccept', 'jupyterlabKeybindingDismiss']);
+
       const keybindings: JupyterLabKeyBindings = {
-        accept: accept ? accept : 'Tab',
-        dismiss: dismiss ? dismiss : 'Escape',
+        accept: accept
+          ? parseKeyCombination(accept)
+          : { key: 'Tab', ctrl: false, alt: false, shift: false, meta: false },
+        dismiss: dismiss
+          ? parseKeyCombination(dismiss)
+          : { key: 'Escape', ctrl: false, alt: false, shift: false, meta: false },
       };
       sendResponse(keybindings);
     })().catch((e) => {

@@ -443,7 +443,6 @@ export class MonacoCompletionProvider implements monaco.languages.InlineCompleti
         language: getLanguage(getEditorLanguage(model)),
         cursorOffset: BigInt(numUtf8Bytes),
         lineEnding: '\n',
-        relativePathMigrateMeToWorkspaceUri: this.relativePath(),
         absoluteUri: 'file:///' + this.absolutePath(model),
       },
       editorOptions: {
