@@ -1,11 +1,11 @@
 version: v2
 plugins:
-  - local: node_modules/@bufbuild/protoc-gen-es/bin/protoc-gen-es
+  - local: [node, node_modules/@bufbuild/protoc-gen-es/bin/protoc-gen-es]
     out: proto
     opt:
       - target=ts
       - import_extension=none
-  - local: node_modules/@connectrpc/protoc-gen-connect-es/bin/protoc-gen-connect-es
+  - local: [node, node_modules/@connectrpc/protoc-gen-connect-es/bin/protoc-gen-connect-es]
     out: proto
     opt:
       - target=ts

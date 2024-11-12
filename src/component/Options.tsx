@@ -148,15 +148,52 @@ const Options = () => {
   const [portalUrlText, setPortalUrlText] = useState('');
   const modelRef = createRef<HTMLInputElement>();
   const [modelText, setModelText] = useState('');
-  const jupyterlabKeybindingAcceptRef = createRef<HTMLInputElement>();
   const [jupyterlabKeybindingAcceptText, setJupyterlabKeybindingAcceptText] = useState('');
-  const jupyterlabKeybindingDismissRef = createRef<HTMLInputElement>();
   const [jupyterlabKeybindingDismissText, setJupyterlabKeybindingDismissText] = useState('');
-  const jupyterNotebookKeybindingAcceptRef = createRef<HTMLInputElement>();
   const [jupyterNotebookKeybindingAcceptText, setJupyterNotebookKeybindingAcceptText] =
     useState('');
   const [jupyterDebounceMs, setJupyterDebounceMs] = useState(0);
   const jupyterDebounceMsRef = createRef<HTMLInputElement>();
+  const [currentKey, setCurrentKey] = useState({
+    key: '',
+    ctrl: false,
+    alt: false,
+    shift: false,
+    meta: false,
+  });
+  const [jupyterlabAcceptInput, setJupyterlabAcceptInput] = useState(false);
+  const [jupyterlabDismissInput, setJupyterlabDismissInput] = useState(false);
+  const [notebookAcceptInput, setNotebookAcceptInput] = useState(false);
+
+  const formatKeyCombination = (key: any) => {
+    const modifiers = [];
+    if (key.ctrl) modifiers.push('Ctrl');
+    if (key.alt) modifiers.push('Alt');
+    if (key.shift) modifiers.push('Shift');
+    if (key.meta) modifiers.push('Meta');
+    return [...modifiers, key.key.toUpperCase()].join('+');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const key = e.key;
+    if (key !== 'Control' && key !== 'Alt' && key !== 'Shift' && key !== 'Meta') {
+      const ctrl = e.ctrlKey;
+      const alt = e.altKey;
+      const shift = e.shiftKey;
+      const meta = e.metaKey;
+      setCurrentKey({ key, ctrl, alt, shift, meta });
+
+      // Force blur using setTimeout to ensure it happens after state update
+      setTimeout(() => {
+        if (e.currentTarget) {
+          e.currentTarget.blur();
+          // Also try to remove focus from the document
+          (document.activeElement as HTMLElement)?.blur();
+        }
+      }, 0);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -203,6 +240,7 @@ const Options = () => {
     }
     return PUBLIC_WEBSITE;
   }, []);
+
   return (
     <Box sx={{ width: '100%', maxWidth: 400, bgcolor: 'background.paper' }}>
       {!CODEIUM_ENTERPRISE && (
@@ -328,95 +366,84 @@ const Options = () => {
         }}
       />
       <Box sx={{ my: 2, mx: 2 }}>
-        <Typography variant="h6"> Jupyterlab settings </Typography>
+        <Typography variant="h6"> Jupyter Settings </Typography>
         <Typography variant="body2">
-          A single keystroke is supported. The syntax is described{' '}
-          <Link
-            href="https://github.com/jupyterlab/lumino/blob/f85aad4903504c942fc202c57270e707f1ab87c1/packages/commands/src/index.ts#L1061-L1083"
-            target="_blank"
-          >
-            here
-            <OpenInNewIcon
-              fontSize="small"
-              sx={{
-                verticalAlign: 'bottom',
-              }}
-            />
-          </Link>
-          .
+          Press the desired key combination in the input field. For example, press "Ctrl+Tab" for a
+          Ctrl+Tab shortcut.
+        </Typography>
+
+        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+          JupyterLab
         </Typography>
         <TextField
           id="jupyterlabKeybindingAccept"
-          label="Accept key binding"
+          label="Accept Shortcut"
           variant="standard"
           fullWidth
-          inputRef={jupyterlabKeybindingAcceptRef}
-          value={jupyterlabKeybindingAcceptText}
-          onChange={(e) => setJupyterlabKeybindingAcceptText(e.target.value)}
+          value={jupyterlabAcceptInput ? 'Press keys...' : jupyterlabKeybindingAcceptText || 'Tab'}
+          onFocus={() => setJupyterlabAcceptInput(true)}
+          onBlur={async () => {
+            setJupyterlabAcceptInput(false);
+            if (currentKey.key) {
+              const formatted = formatKeyCombination(currentKey);
+              setJupyterlabKeybindingAcceptText(formatted);
+              await setStorageItem('jupyterlabKeybindingAccept', formatted);
+              setCurrentKey({ key: '', ctrl: false, alt: false, shift: false, meta: false });
+            }
+          }}
+          onKeyDown={handleKeyDown}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="text"
-            onClick={async () => {
-              const keybinding = jupyterlabKeybindingAcceptRef.current?.value;
-              await setStorageItem('jupyterlabKeybindingAccept', keybinding);
-            }}
-            sx={{ textTransform: 'none' }}
-          >
-            Enter Keybinding <LoginIcon />
-          </Button>
-        </Box>
         <TextField
           id="jupyterlabKeybindingDismiss"
-          label="Dismiss key binding"
+          label="Dismiss Shortcut"
           variant="standard"
           fullWidth
-          inputRef={jupyterlabKeybindingDismissRef}
-          value={jupyterlabKeybindingDismissText}
-          onChange={(e) => setJupyterlabKeybindingDismissText(e.target.value)}
+          value={
+            jupyterlabDismissInput ? 'Press keys...' : jupyterlabKeybindingDismissText || 'Escape'
+          }
+          onFocus={() => setJupyterlabDismissInput(true)}
+          onBlur={async () => {
+            setJupyterlabDismissInput(false);
+            if (currentKey.key) {
+              const formatted = formatKeyCombination(currentKey);
+              setJupyterlabKeybindingDismissText(formatted);
+              await setStorageItem('jupyterlabKeybindingDismiss', formatted);
+              setCurrentKey({ key: '', ctrl: false, alt: false, shift: false, meta: false });
+            }
+          }}
+          onKeyDown={handleKeyDown}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="text"
-            onClick={async () => {
-              const keybinding = jupyterlabKeybindingDismissRef.current?.value;
-              await setStorageItem('jupyterlabKeybindingDismiss', keybinding);
-            }}
-            sx={{ textTransform: 'none' }}
-          >
-            Enter Keybinding <LoginIcon />
-          </Button>
-        </Box>
-      </Box>
-      <Box sx={{ my: 2, mx: 2 }}>
-        <Typography variant="h6"> Jupyter Notebook settings </Typography>
+
+        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+          Jupyter Notebook
+        </Typography>
         <TextField
           id="jupyterNotebookKeybindingAccept"
-          label="Accept key binding"
+          label="Accept Shortcut"
           variant="standard"
           fullWidth
-          inputRef={jupyterNotebookKeybindingAcceptRef}
-          value={jupyterNotebookKeybindingAcceptText}
-          onChange={(e) => setJupyterNotebookKeybindingAcceptText(e.target.value)}
+          value={
+            notebookAcceptInput ? 'Press keys...' : jupyterNotebookKeybindingAcceptText || 'Tab'
+          }
+          onFocus={() => setNotebookAcceptInput(true)}
+          onBlur={async () => {
+            setNotebookAcceptInput(false);
+            if (currentKey.key) {
+              const formatted = formatKeyCombination(currentKey);
+              setJupyterNotebookKeybindingAcceptText(formatted);
+              await setStorageItem('jupyterNotebookKeybindingAccept', formatted);
+              setCurrentKey({ key: '', ctrl: false, alt: false, shift: false, meta: false });
+            }
+          }}
+          onKeyDown={handleKeyDown}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="text"
-            onClick={async () => {
-              const keybinding = jupyterNotebookKeybindingAcceptRef.current?.value;
-              await setStorageItem('jupyterNotebookKeybindingAccept', keybinding);
-            }}
-            sx={{ textTransform: 'none' }}
-          >
-            Enter Keybinding <LoginIcon />
-          </Button>
-        </Box>
-      </Box>
-      <Box sx={{ my: 2, mx: 2 }}>
-        <Typography variant="h6"> Jupyter debounce time </Typography>
+
+        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+          Performance
+        </Typography>
         <TextField
           id="jupyterDebounceMs"
-          label="Debounce time (ms)"
+          label="Debounce (ms)"
           variant="standard"
           fullWidth
           type="number"
@@ -428,8 +455,8 @@ const Options = () => {
           <Button
             variant="text"
             onClick={async () => {
-              const debounceTime = Number(jupyterDebounceMsRef.current?.value);
-              await setStorageItem('jupyterDebounceMs', debounceTime);
+              const debounceMs = parseInt(jupyterDebounceMsRef.current?.value ?? '0');
+              await setStorageItem('jupyterDebounceMs', debounceMs);
             }}
             sx={{ textTransform: 'none' }}
           >

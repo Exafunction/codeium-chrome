@@ -54,7 +54,8 @@ export class CodeMirrorState {
       const { consumeEvent, forceTriggerCompletion } = this.codeMirrorManager.beforeMainKeyHandler(
         editor.getDoc(),
         event,
-        { tab: true, escape: true }
+        { tab: true, escape: true },
+        { key: 'Tab', ctrl: false, alt: false, shift: false, meta: false }
       );
       if (consumeEvent !== undefined) {
         if (consumeEvent) {
